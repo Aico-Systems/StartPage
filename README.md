@@ -1,32 +1,86 @@
 # ☕ Sip - Your Cozy New Tab Page
 
-Transform your browser's new tab into a beautiful, personalized workspace with Sip. Featuring stunning Catppuccin themes, glassmorphism effects, and intelligent customization, Sip makes every new tab a delightful experience.
+Transform your browser's new tab into a beautiful, personalized workspace with Sip. Featuring stunning color themes, glassmorphism effects, and intelligent customization, Sip makes every new tab a delightful experience.
+
+---
+
+## 🎉 UPDATES - December 2025
+
+### 🎨 **9 Color Schemes with Light/Dark Modes**
+Sip now includes 9 beautiful color schemes, each with both light and dark variants:
+- **Catppuccin** - Warm, soothing pastels (original default)
+- **Nord** - Cool, arctic-inspired blues and grays
+- **Gruvbox** - Retro, warm earthy tones with high contrast
+- **Tokyo Night** - Modern deep blues with vibrant accents
+- **Dracula** - Classic vibrant purples and cyans
+- **Solarized** - Precision colors designed for readability
+- **Kanagawa** - Japanese-inspired muted, natural tones
+- **Ayu** - Minimal modern with bright accents
+- **Monochrome** - Pure black & white for maximum focus
+
+### ⚙️ **Enhanced Settings & Customization**
+- **Click Time to Toggle** - Click the clock to quickly switch between 12h/24h format
+- **Show Seconds Option** - Display seconds on the clock for precise timekeeping
+- **Link Behavior Control** - Choose to open links in same window, new tab, or new window
+- **Keyboard Shortcuts Toggle** - Show or hide keyboard hint overlays
+- **Color Scheme Dropdown** - Easy selection of any color scheme
+
+### 🔗 **Social Links Integration**
+- New **Social Links** settings tab with 10 pre-configured platforms
+- Add your social media URLs (Facebook, Instagram, Twitter/X, LinkedIn, GitHub, YouTube, TikTok, Discord, Reddit, Mastodon)
+- Toggle visibility for each platform
+- Display social icons in the footer
+
+### 🎯 **Footer Customization**
+- New **Footer Settings** tab with complete layout control
+- Customize left, center, and right footer sections independently
+- Choose from: Weather, Social Links, Quotes, or Blank for each section
+- Default: Weather (left), Blank (center), Quotes (right)
+
+### 📚 **Improved Help & Documentation**
+- Help content moved to a dedicated tab in Settings
+- Removed standalone help button for cleaner UI
+- Comprehensive icon customization guide integrated into settings
+
+### 🎭 **UI/UX Improvements**
+- Custom-styled checkboxes that blend seamlessly with each theme
+- Removed redundant settings (quotes toggle now managed via Footer tab)
+- Better responsive design for settings with tab wrapping
+- Developer credits section at the bottom
+
+---
 
 ## ✨ Key Features
 
 **Beautiful Design**
-- Gorgeous Catppuccin color themes (Mocha dark & Latte light)
+- **9 stunning color schemes** - Catppuccin, Nord, Gruvbox, Tokyo Night, Dracula, Solarized, Kanagawa, Ayu, Monochrome
+- **Light & Dark modes** for every color scheme (18 total theme combinations)
 - Modern glassmorphism UI with ambient glow effects
 - Smooth animations and responsive layout
+- Multi-color or monochrome category accent options
 
 **Smart Search**
 - Integrated search respecting your default search engine (Chrome)
-- Quick engine switching between multiple search providers
+- Quick engine switching between 9 search providers (Google, DuckDuckGo, GitHub, Git, YouTube, Bing, Amazon, Wikipedia, Internet Archive)
 - Keyboard shortcuts for lightning-fast navigation
 
 **Personalization**
 - Dynamic time-based greetings with beautiful icons
 - Real-time weather with OpenWeather API integration
+- **Click clock to toggle 12h/24h** format instantly
+- Optional seconds display on clock
 - Customizable quick links organized by categories (up to 8 categories, 10 links each)
-- Choose between 12hr/24hr time formats
 - Toggle between Fahrenheit and Celsius
-- Show/hide inspirational quotes
+- **Social links integration** with 10 popular platforms
+- **Customizable footer layout** (left/center/right sections)
 
 **Productivity**
 - Organize your favorite sites in customizable categories
-- Built-in help system for easy icon customization
+- **Link behavior control** (open in same window, new tab, or new window)
+- Built-in help system integrated into settings
 - All settings persist locally (no data collection)
-- Keyboard shortcuts: `/` for search, `1-7` for engines, `Esc` to clear
+- Keyboard shortcuts: `/` for search, `1-9` for engines, `Esc` to clear
+- Optional keyboard hints overlay
 
 **Privacy First**
 - No data collection or tracking
@@ -75,19 +129,42 @@ Made with ☕ and 💜 using Catppuccin themes
 ![Preview Image](sip_preview.png)
 
 <details>
-<summary>📸 Screenshots</summary>
+<summary>📸 Screenshots - Click to expand</summary>
 
-### Dark Theme (Mocha)
+### Original Theme Examples
+
+#### Catppuccin Dark (Mocha)
 ![Dark Theme](screenshots/dark-theme.png)
 
-### Light Theme (Latte)
+#### Catppuccin Light (Latte)
 ![Light Theme](screenshots/light-theme.png)
 
-### Settings Panel
+#### Settings Panel
 ![Settings](screenshots/settings.png)
 
-### Help Panel
-![Help](screenshots/help.png)
+### New Color Schemes (December 2025)
+
+20 additional screenshots showcasing all 9 color schemes in both light and dark modes are available in `/screenshots/Updated Screens/`. These include:
+
+- **Catppuccin** (Mocha & Latte)
+- **Nord** (Polar Night & Snow Storm)
+- **Gruvbox** (Dark & Light)
+- **Tokyo Night** (Night & Day)
+- **Dracula** (Dark & adapted Light)
+- **Solarized** (Dark & Light)
+- **Kanagawa** (Wave & Lotus)
+- **Ayu** (Dark & Light)
+- **Monochrome** (Black & White)
+
+Each screenshot demonstrates the glassmorphism effects, customizable categories, and beautiful color harmony of each theme.
+
+### New Features Showcase
+
+- Social Links footer widget with platform icons
+- Customizable footer sections (Weather, Socials, Quotes)
+- Enhanced settings with 6 tabs (General, Categories, Links, Social, Footer, Help)
+- Color scheme dropdown selector
+- Clock with seconds display option
 
 </details>
 

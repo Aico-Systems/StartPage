@@ -109,28 +109,44 @@ const allSearchEngines = {
 function loadSettings() {
     const defaults = {
         userName: '',
+        colorScheme: 'catppuccin',
         theme: 'dark',
         colorMode: 'multi',
         timeFormat: '12',
+        showSeconds: 'false',
         tempUnit: 'F',
         showQuotes: 'true',
         enabledEngines: ['google', 'duckduckgo', 'github', 'youtube'],
         preferredEngine: 'google',
         weatherLocation: 'New York,NY,US',
-        openWeatherApiKey: ''
+        openWeatherApiKey: '',
+        linkBehavior: 'same',
+        showKeyboardHints: 'true',
+        footerLeft: 'weather',
+        footerCenter: 'blank',
+        footerRight: 'quotes',
+        socialLinks: []
     };
     
     return {
         userName: localStorage.getItem('userName') ??  defaults.userName,
+        colorScheme: localStorage.getItem('colorScheme') ?? defaults.colorScheme,
         theme: localStorage.getItem('theme') ?? defaults.theme,
         colorMode: localStorage.getItem('colorMode') ?? defaults.colorMode,
         timeFormat: localStorage.getItem('timeFormat') ?? defaults.timeFormat,
+        showSeconds: localStorage.getItem('showSeconds') ?? defaults.showSeconds,
         tempUnit: localStorage.getItem('tempUnit') ?? defaults.tempUnit,
         showQuotes: localStorage.getItem('showQuotes') ?? defaults.showQuotes,
         enabledEngines: JSON.parse(localStorage.getItem('enabledEngines')) ?? defaults.enabledEngines,
         preferredEngine: localStorage.getItem('preferredEngine') ?? defaults.preferredEngine,
         weatherLocation: localStorage.getItem('weatherLocation') ?? defaults.weatherLocation,
-        openWeatherApiKey: localStorage.getItem('openWeatherApiKey') ??  defaults.openWeatherApiKey
+        openWeatherApiKey: localStorage.getItem('openWeatherApiKey') ??  defaults.openWeatherApiKey,
+        linkBehavior: localStorage.getItem('linkBehavior') ?? defaults.linkBehavior,
+        showKeyboardHints: localStorage.getItem('showKeyboardHints') ?? defaults.showKeyboardHints,
+        footerLeft: localStorage.getItem('footerLeft') ?? defaults.footerLeft,
+        footerCenter: localStorage.getItem('footerCenter') ?? defaults.footerCenter,
+        footerRight: localStorage.getItem('footerRight') ?? defaults.footerRight,
+        socialLinks: JSON.parse(localStorage.getItem('socialLinks')) ?? defaults.socialLinks
     };
 }
 
@@ -189,14 +205,34 @@ function applyTheme(theme) {
     saveSettings('theme', theme);
 }
 
+function applyColorScheme(scheme) {
+    document.documentElement.setAttribute('data-scheme', scheme);
+    saveSettings('colorScheme', scheme);
+    // Update color mode visibility based on scheme
+    updateColorModeVisibility();
+}
+
+function updateColorModeVisibility() {
+    const colorModeItem = document.querySelector('[data-setting="colorMode"]')?.closest('.setting-item');
+    if (colorModeItem) {
+        // Hide color mode option for monochrome scheme
+        if (settings.colorScheme === 'monochrome') {
+            colorModeItem.style.display = 'none';
+        } else {
+            colorModeItem.style.display = 'flex';
+        }
+    }
+}
+
 function applyColorMode(mode) {
     document.documentElement.setAttribute('data-color-mode', mode);
     saveSettings('colorMode', mode);
     renderLinksGrid();
 }
 
-// Apply saved theme immediately
+// Apply saved theme and color scheme immediately
 applyTheme(settings.theme);
+applyColorScheme(settings.colorScheme);
 
 // ========================================
 // DOM Elements
@@ -215,14 +251,23 @@ function updateDateTime() {
     
     let hours = now.getHours();
     const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
     let timeString;
     
     if (settings.timeFormat === '12') {
         const period = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12 || 12;
-        timeString = `${hours}:${minutes} ${period}`;
+        if (settings.showSeconds === 'true') {
+            timeString = `${hours}:${minutes}:${seconds} ${period}`;
+        } else {
+            timeString = `${hours}:${minutes} ${period}`;
+        }
     } else {
-        timeString = `${hours.toString().padStart(2, '0')}:${minutes}`;
+        if (settings.showSeconds === 'true') {
+            timeString = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds}`;
+        } else {
+            timeString = `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
     }
     
     timeElement.textContent = timeString;
@@ -331,6 +376,14 @@ function renderSearchEngines() {
 function updateKeyboardHints() {
     const hintsContainer = document. querySelector('.keyboard-hints');
     if (!hintsContainer) return;
+    
+    // Show or hide keyboard hints based on setting
+    if (settings.showKeyboardHints === 'false') {
+        hintsContainer.style.display = 'none';
+        return;
+    } else {
+        hintsContainer.style.display = 'flex';
+    }
     
     const engineCount = settings.enabledEngines.length;
     const engineHint = engineCount > 1 ? `<kbd>1-${engineCount}</kbd> Engine` : '';
@@ -479,6 +532,106 @@ function updateQuote() {
 }
 
 // ========================================
+// Social Links Functions
+// ========================================
+
+function renderSocialLinks() {
+    // Get or create social links container
+    let socialWidget = document.querySelector('.social-widget');
+    
+    if (!socialWidget) {
+        socialWidget = document.createElement('div');
+        socialWidget.className = 'widget social-widget';
+        socialWidget.innerHTML = '<div class="social-icons"></div>';
+    }
+    
+    const iconsContainer = socialWidget.querySelector('.social-icons');
+    if (!iconsContainer) return;
+    
+    // Filter visible social links
+    const visibleLinks = settings.socialLinks.filter(link => link.visible && link.url);
+    
+    if (visibleLinks.length > 0) {
+        iconsContainer.innerHTML = visibleLinks.map(link => {
+            const target = settings.linkBehavior === 'new-tab' ? '_blank' : (settings.linkBehavior === 'new-window' ? '_blank' : '_self');
+            return `<a href="${link.url}" target="${target}" title="${link.name}" class="social-icon"><i class="${link.icon}"></i></a>`;
+        }).join('');
+    } else {
+        iconsContainer.innerHTML = '';
+    }
+    
+    return socialWidget;
+}
+
+// ========================================
+// Footer Management
+// ========================================
+
+function updateFooter() {
+    const footer = document.querySelector('.footer');
+    if (!footer) return;
+    
+    // Clear existing content
+    footer.innerHTML = '';
+    
+    // Create sections based on settings
+    const sections = [
+        { position: 'left', setting: settings.footerLeft },
+        { position: 'center', setting: settings.footerCenter },
+        { position: 'right', setting: settings.footerRight }
+    ];
+    
+    sections.forEach(section => {
+        const widget = createFooterWidget(section.setting);
+        if (widget) {
+            widget.style.flex = section.position === 'center' ? '1' : 'initial';
+            widget.style.justifyContent = section.position === 'center' ? 'center' : (section.position === 'right' ? 'flex-end' : 'flex-start');
+            footer.appendChild(widget);
+        }
+    });
+}
+
+function createFooterWidget(type) {
+    if (type === 'blank') return null;
+    
+    if (type === 'weather') {
+        const widget = document.createElement('div');
+        widget.className = 'widget weather-widget';
+        widget.innerHTML = `
+            <span class="widget-icon"><i class="fa-solid fa-cloud-sun"></i></span>
+            <span class="widget-text" id="weather">Loading...</span>
+        `;
+        // Reassign weatherElement
+        setTimeout(() => {
+            weatherElement = document.getElementById('weather');
+            updateWeather();
+        }, 0);
+        return widget;
+    }
+    
+    if (type === 'quotes') {
+        const widget = document.createElement('div');
+        widget.className = 'widget quote-widget';
+        widget.innerHTML = `
+            <span class="widget-icon"><i class="fa-solid fa-quote-left"></i></span>
+            <span class="widget-text" id="quote">"The only way to do great work is to love what you do."</span>
+        `;
+        // Reassign quoteElement
+        setTimeout(() => {
+            quoteElement = document.getElementById('quote');
+            updateQuote();
+        }, 0);
+        return widget;
+    }
+    
+    if (type === 'socials') {
+        return renderSocialLinks();
+    }
+    
+    return null;
+}
+
+// ========================================
 // Links Grid Rendering
 // ========================================
 
@@ -486,6 +639,8 @@ function renderLinksGrid() {
     if (!linksGrid) return;
     
     const colorMode = settings.colorMode;
+    const linkTarget = settings.linkBehavior === 'new-tab' ? '_blank' : (settings.linkBehavior === 'new-window' ? '_blank' : '_self');
+    const linkFeatures = settings.linkBehavior === 'new-window' ? 'noopener,noreferrer,width=1024,height=768' : '';
     
     linksGrid.innerHTML = categories.map((category, index) => {
         const categoryLinks = links[category.id] || [];
@@ -499,7 +654,7 @@ function renderLinksGrid() {
                 </h2>
                 <div class="links">
                     ${categoryLinks.map(link => `
-                        <a href="${link.url}" class="link-card">
+                        <a href="${link.url}" class="link-card" target="${linkTarget}" ${linkTarget === '_blank' && linkFeatures ? `onclick="window.open('${link.url}', '_blank', '${linkFeatures}'); return false;"` : ''}>
                             <span class="link-icon"><i class="${link.icon || 'fa-solid fa-link'}"></i></span>
                             <span class="link-text">${link.name}</span>
                         </a>
@@ -537,11 +692,6 @@ function initSettings() {
     const settingsOverlay = document.getElementById('settings-overlay');
     const settingsClose = document.getElementById('settings-close');
     
-    // Help modal elements
-    const helpBtn = document.getElementById('help-btn');
-    const helpOverlay = document.getElementById('help-overlay');
-    const helpClose = document.getElementById('help-close');
-    
     if (!settingsBtn || !settingsOverlay || !settingsClose) return;
     
     // Open settings
@@ -562,31 +712,11 @@ function initSettings() {
         }
     });
     
-    // Help modal
-    if (helpBtn && helpOverlay && helpClose) {
-        helpBtn.addEventListener('click', () => {
-            helpOverlay.classList.add('active');
-        });
-        
-        helpClose.addEventListener('click', () => {
-            helpOverlay.classList.remove('active');
-        });
-        
-        helpOverlay.addEventListener('click', (e) => {
-            if (e.target === helpOverlay) {
-                helpOverlay.classList.remove('active');
-            }
-        });
-    }
-    
     // Close on Escape key
     document. addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (settingsOverlay.classList. contains('active')) {
                 settingsOverlay.classList.remove('active');
-            }
-            if (helpOverlay && helpOverlay.classList.contains('active')) {
-                helpOverlay.classList.remove('active');
             }
         }
     });
@@ -606,6 +736,12 @@ function initSettings() {
                 renderCategoriesSettings();
             } else if (tabId === 'links') {
                 renderLinksSettings();
+            } else if (tabId === 'social') {
+                renderSocialLinksSettings();
+            } else if (tabId === 'footer') {
+                renderFooterSettings();
+            } else if (tabId === 'help') {
+                // Help tab - content is static in HTML
             }
         });
     });
@@ -619,16 +755,26 @@ function initSettings() {
             saveSettings(setting, value);
             updateToggleStates();
             
-            if (setting === 'theme') {
+            if (setting === 'colorScheme') {
+                applyColorScheme(value);
+            } else if (setting === 'theme') {
                 applyTheme(value);
             } else if (setting === 'colorMode') {
                 applyColorMode(value);
             } else if (setting === 'timeFormat') {
                 updateDateTime();
+            } else if (setting === 'showSeconds') {
+                updateDateTime();
             } else if (setting === 'tempUnit') {
                 updateWeather();
             } else if (setting === 'showQuotes') {
                 updateQuote();
+            } else if (setting === 'linkBehavior') {
+                renderLinksGrid();
+            } else if (setting === 'showKeyboardHints') {
+                updateKeyboardHints();
+            } else if (setting === 'footerLeft' || setting === 'footerCenter' || setting === 'footerRight') {
+                updateFooter();
             }
         });
     });
@@ -639,6 +785,14 @@ function initSettings() {
         nameInput.addEventListener('input', (e) => {
             saveSettings('userName', e.target.value);
             updateGreeting(new Date().getHours());
+        });
+    }
+    
+    // Color scheme dropdown handler
+    const colorSchemeSelect = document.getElementById('color-scheme-select');
+    if (colorSchemeSelect) {
+        colorSchemeSelect.addEventListener('change', (e) => {
+            applyColorScheme(e.target.value);
         });
     }
     
@@ -723,6 +877,12 @@ function populateSettingsUI() {
     const nameInput = document.getElementById('setting-name');
     if (nameInput) {
         nameInput.value = settings.userName;
+    }
+    
+    // Populate color scheme dropdown
+    const colorSchemeSelect = document.getElementById('color-scheme-select');
+    if (colorSchemeSelect) {
+        colorSchemeSelect.value = settings.colorScheme;
     }
     
     // Populate weather location input
@@ -956,6 +1116,104 @@ function deleteLink(categoryId, index) {
 }
 
 // ========================================
+// Social Links Management
+// ========================================
+
+const defaultSocialPlatforms = [
+    { name: 'Facebook', icon: 'fa-brands fa-facebook', visible: false, url: '' },
+    { name: 'Instagram', icon: 'fa-brands fa-instagram', visible: false, url: '' },
+    { name: 'Twitter/X', icon: 'fa-brands fa-x-twitter', visible: false, url: '' },
+    { name: 'LinkedIn', icon: 'fa-brands fa-linkedin', visible: false, url: '' },
+    { name: 'GitHub', icon: 'fa-brands fa-github', visible: false, url: '' },
+    { name: 'YouTube', icon: 'fa-brands fa-youtube', visible: false, url: '' },
+    { name: 'TikTok', icon: 'fa-brands fa-tiktok', visible: false, url: '' },
+    { name: 'Discord', icon: 'fa-brands fa-discord', visible: false, url: '' },
+    { name: 'Reddit', icon: 'fa-brands fa-reddit-alien', visible: false, url: '' },
+    { name: 'Mastodon', icon: 'fa-brands fa-mastodon', visible: false, url: '' }
+];
+
+function initializeSocialLinks() {
+    if (!settings.socialLinks || settings.socialLinks.length === 0) {
+        settings.socialLinks = JSON.parse(JSON.stringify(defaultSocialPlatforms));
+        saveSettings('socialLinks', settings.socialLinks);
+    }
+}
+
+function renderSocialLinksSettings() {
+    const container = document.getElementById('social-links-list');
+    if (!container) return;
+    
+    if (!settings.socialLinks || settings.socialLinks.length === 0) {
+        initializeSocialLinks();
+    }
+    
+    container.innerHTML = settings.socialLinks.map((social, index) => `
+        <div class="social-link-item" data-index="${index}">
+            <label class="social-checkbox">
+                <input type="checkbox" ${social.visible ? 'checked' : ''} data-index="${index}">
+            </label>
+            <span class="icon-preview"><i class="${social.icon}"></i></span>
+            <span class="social-name">${social.name}</span>
+            <input type="url" class="social-url-input" value="${social.url || ''}" placeholder="https://..." data-index="${index}">
+        </div>
+    `).join('');
+    
+    // Bind events
+    container.querySelectorAll('.social-checkbox input').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            settings.socialLinks[index].visible = e.target.checked;
+            saveSettings('socialLinks', settings.socialLinks);
+            updateFooter();
+        });
+    });
+    
+    container.querySelectorAll('.social-url-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            settings.socialLinks[index].url = e.target.value;
+            saveSettings('socialLinks', settings.socialLinks);
+            updateFooter();
+        });
+    });
+}
+
+// ========================================
+// Footer Settings Management
+// ========================================
+
+function renderFooterSettings() {
+    // Update dropdowns
+    const footerLeftSelect = document.getElementById('footer-left-select');
+    const footerCenterSelect = document.getElementById('footer-center-select');
+    const footerRightSelect = document.getElementById('footer-right-select');
+    
+    if (footerLeftSelect) {
+        footerLeftSelect.value = settings.footerLeft;
+        footerLeftSelect.addEventListener('change', (e) => {
+            saveSettings('footerLeft', e.target.value);
+            updateFooter();
+        });
+    }
+    
+    if (footerCenterSelect) {
+        footerCenterSelect.value = settings.footerCenter;
+        footerCenterSelect.addEventListener('change', (e) => {
+            saveSettings('footerCenter', e.target.value);
+            updateFooter();
+        });
+    }
+    
+    if (footerRightSelect) {
+        footerRightSelect.value = settings.footerRight;
+        footerRightSelect.addEventListener('change', (e) => {
+            saveSettings('footerRight', e.target.value);
+            updateFooter();
+        });
+    }
+}
+
+// ========================================
 // Keyboard Shortcuts
 // ========================================
 
@@ -1049,12 +1307,27 @@ function init() {
     updateDateTime();
     setInterval(updateDateTime, 1000);
     
+    // Add click handler to time element to toggle format
+    if (timeElement) {
+        timeElement.style.cursor = 'pointer';
+        timeElement.title = 'Click to toggle time format';
+        timeElement.addEventListener('click', () => {
+            const newFormat = settings.timeFormat === '12' ? '24' : '12';
+            saveSettings('timeFormat', newFormat);
+            updateDateTime();
+            updateToggleStates();
+        });
+    }
+    
     // Update weather
     updateWeather();
     setInterval(updateWeather, 600000);
     
     // Set random quote
     updateQuote();
+    
+    // Update footer layout
+    updateFooter();
     
     // Restore preferred search engine
     if (settings.enabledEngines.includes(settings.preferredEngine)) {

@@ -32,64 +32,6 @@
             </div>
         </header>
 
-        <!-- Help Modal -->
-        <div class="help-overlay" id="help-overlay">
-            <div class="help-modal">
-                <div class="help-header">
-                    <h3><i class="fa-solid fa-circle-question"></i> Help</h3>
-                    <button class="help-close" id="help-close">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                <div class="help-content">
-                    <section class="help-section">
-                        <h4><i class="fa-solid fa-icons"></i> Customizing Icons</h4>
-                        <p>This startpage uses <a href="https://fontawesome.com/search?o=r&m=free" target="_blank">Font Awesome</a> icons. You can customize icons for categories and links in Settings.</p>
-                    </section>
-                    
-                    <section class="help-section">
-                        <h4><i class="fa-solid fa-magnifying-glass"></i> Step 1: Find an Icon</h4>
-                        <ol class="help-steps">
-                            <li>Go to <a href="https://fontawesome.com/search?o=r&m=free" target="_blank">fontawesome.com/search</a></li>
-                            <li>Type a keyword in the search box (e.g., "linux", "music", "cloud")</li>
-                            <li>Click the <strong>"Free"</strong> filter button on the right side to show only free icons</li>
-                            <li>Click on the icon you want to use</li>
-                        </ol>
-                    </section>
-                    
-                    <section class="help-section">
-                        <h4><i class="fa-solid fa-copy"></i> Step 2: Copy the Icon Code</h4>
-                        <ol class="help-steps">
-                            <li>After clicking an icon, a popup will appear</li>
-                            <li>Look for the HTML code that looks like: <code>&lt;i class="fa-brands fa-linux"&gt;&lt;/i&gt;</code></li>
-                            <li>Copy <strong>only the class value</strong> — the part inside the quotes</li>
-                            <li>For example, copy: <code>fa-brands fa-linux</code></li>
-                        </ol>
-                    </section>
-                    
-                    <section class="help-section">
-                        <h4><i class="fa-solid fa-paste"></i> Step 3: Use in Settings</h4>
-                        <ol class="help-steps">
-                            <li>Open Settings <i class="fa-solid fa-gear"></i> and go to the Categories or Links tab</li>
-                            <li>Paste the icon code into the icon field (the first input box)</li>
-                            <li>You'll see a live preview of your icon appear</li>
-                        </ol>
-                    </section>
-                    
-                    <section class="help-section">
-                        <h4><i class="fa-solid fa-lightbulb"></i> Examples</h4>
-                        <ul class="icon-examples">
-                            <li><code>fa-solid fa-code</code> → <i class="fa-solid fa-code"></i> (solid style)</li>
-                            <li><code>fa-brands fa-github</code> → <i class="fa-brands fa-github"></i> (brand logo)</li>
-                            <li><code>fa-solid fa-gamepad</code> → <i class="fa-solid fa-gamepad"></i></li>
-                            <li><code>fa-brands fa-spotify</code> → <i class="fa-brands fa-spotify"></i></li>
-                        </ul>
-                        <p class="help-tip"><strong>Tip:</strong> Use <code>fa-solid</code> for general icons or <code>fa-brands</code> for company/brand logos.</p>
-                    </section>
-                </div>
-            </div>
-        </div>
-
         <!-- Settings Modal -->
         <div class="settings-overlay" id="settings-overlay">
             <div class="settings-modal">
@@ -111,6 +53,15 @@
                     <button class="settings-tab" data-tab="links">
                         <i class="fa-solid fa-link"></i> Links
                     </button>
+                    <button class="settings-tab" data-tab="social">
+                        <i class="fa-solid fa-share-nodes"></i> Social
+                    </button>
+                    <button class="settings-tab" data-tab="footer">
+                        <i class="fa-solid fa-align-justify"></i> Footer
+                    </button>
+                    <button class="settings-tab" data-tab="help">
+                        <i class="fa-solid fa-circle-question"></i> Help
+                    </button>
                 </div>
 
                 <div class="settings-body">
@@ -127,7 +78,25 @@
                         <div class="setting-item">
                             <div class="setting-label">
                                 <i class="fa-solid fa-palette"></i>
-                                <span>Theme</span>
+                                <span>Color Scheme</span>
+                            </div>
+                            <select id="color-scheme-select" class="setting-select">
+                                <option value="catppuccin">Catppuccin</option>
+                                <option value="nord">Nord</option>
+                                <option value="gruvbox">Gruvbox</option>
+                                <option value="tokyo-night">Tokyo Night</option>
+                                <option value="dracula">Dracula</option>
+                                <option value="solarized">Solarized</option>
+                                <option value="kanagawa">Kanagawa</option>
+                                <option value="ayu">Ayu</option>
+                                <option value="monochrome">Monochrome</option>
+                            </select>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-circle-half-stroke"></i>
+                                <span>Mode</span>
                             </div>
                             <div class="setting-toggle">
                                 <button class="toggle-btn" data-setting="theme" data-value="dark"><i class="fa-solid fa-moon"></i> Dark</button>
@@ -149,11 +118,22 @@
                         <div class="setting-item">
                             <div class="setting-label">
                                 <i class="fa-solid fa-clock"></i>
-                                <span>Time Format</span>
+                                <span>Time Format (Click time to toggle)</span>
                             </div>
                             <div class="setting-toggle">
                                 <button class="toggle-btn" data-setting="timeFormat" data-value="12">12hr</button>
                                 <button class="toggle-btn" data-setting="timeFormat" data-value="24">24hr</button>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-stopwatch"></i>
+                                <span>Show Seconds</span>
+                            </div>
+                            <div class="setting-toggle">
+                                <button class="toggle-btn" data-setting="showSeconds" data-value="true"><i class="fa-solid fa-eye"></i> Show</button>
+                                <button class="toggle-btn" data-setting="showSeconds" data-value="false"><i class="fa-solid fa-eye-slash"></i> Hide</button>
                             </div>
                         </div>
                         
@@ -170,12 +150,24 @@
                         
                         <div class="setting-item">
                             <div class="setting-label">
-                                <i class="fa-solid fa-quote-left"></i>
-                                <span>Show Quotes</span>
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <span>Open Links In</span>
                             </div>
                             <div class="setting-toggle">
-                                <button class="toggle-btn" data-setting="showQuotes" data-value="true"><i class="fa-solid fa-eye"></i> Show</button>
-                                <button class="toggle-btn" data-setting="showQuotes" data-value="false"><i class="fa-solid fa-eye-slash"></i> Hide</button>
+                                <button class="toggle-btn" data-setting="linkBehavior" data-value="same">Same Window</button>
+                                <button class="toggle-btn" data-setting="linkBehavior" data-value="new-tab">New Tab</button>
+                                <button class="toggle-btn" data-setting="linkBehavior" data-value="new-window">New Window</button>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-keyboard"></i>
+                                <span>Keyboard Shortcuts</span>
+                            </div>
+                            <div class="setting-toggle">
+                                <button class="toggle-btn" data-setting="showKeyboardHints" data-value="true"><i class="fa-solid fa-eye"></i> Show</button>
+                                <button class="toggle-btn" data-setting="showKeyboardHints" data-value="false"><i class="fa-solid fa-eye-slash"></i> Hide</button>
                             </div>
                         </div>
                         
@@ -277,6 +269,106 @@
                             <i class="fa-solid fa-plus"></i> Add Link
                         </button>
                     </div>
+                    
+                    <!-- Social Links Tab -->
+                    <div class="settings-panel" data-panel="social">
+                        <p class="panel-description">Configure your social media links to display in the footer.</p>
+                        <div class="social-links-list" id="social-links-list">
+                            <!-- Social links will be populated dynamically -->
+                        </div>
+                    </div>
+                    
+                    <!-- Footer Tab -->
+                    <div class="settings-panel" data-panel="footer">
+                        <p class="panel-description">Customize the footer layout by selecting what to display in each section.</p>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-align-left"></i>
+                                <span>Left Section</span>
+                            </div>
+                            <select id="footer-left-select" class="setting-select">
+                                <option value="blank">Blank</option>
+                                <option value="weather">Weather</option>
+                                <option value="socials">Social Links</option>
+                                <option value="quotes">Quotes</option>
+                            </select>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-align-center"></i>
+                                <span>Center Section</span>
+                            </div>
+                            <select id="footer-center-select" class="setting-select">
+                                <option value="blank">Blank</option>
+                                <option value="weather">Weather</option>
+                                <option value="socials">Social Links</option>
+                                <option value="quotes">Quotes</option>
+                            </select>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-label">
+                                <i class="fa-solid fa-align-right"></i>
+                                <span>Right Section</span>
+                            </div>
+                            <select id="footer-right-select" class="setting-select">
+                                <option value="blank">Blank</option>
+                                <option value="weather">Weather</option>
+                                <option value="socials">Social Links</option>
+                                <option value="quotes">Quotes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Help Tab -->
+                    <div class="settings-panel" data-panel="help">
+                        <section class="help-section">
+                            <h4><i class="fa-solid fa-icons"></i> Customizing Icons</h4>
+                            <p>This startpage uses <a href="https://fontawesome.com/search?o=r&m=free" target="_blank">Font Awesome</a> icons. You can customize icons for categories and links in Settings.</p>
+                        </section>
+                        
+                        <section class="help-section">
+                            <h4><i class="fa-solid fa-magnifying-glass"></i> Step 1: Find an Icon</h4>
+                            <ol class="help-steps">
+                                <li>Go to <a href="https://fontawesome.com/search?o=r&m=free" target="_blank">fontawesome.com/search</a></li>
+                                <li>Type a keyword in the search box (e.g., "linux", "music", "cloud")</li>
+                                <li>Click the <strong>"Free"</strong> filter button on the right side to show only free icons</li>
+                                <li>Click on the icon you want to use</li>
+                            </ol>
+                        </section>
+                        
+                        <section class="help-section">
+                            <h4><i class="fa-solid fa-copy"></i> Step 2: Copy the Icon Code</h4>
+                            <ol class="help-steps">
+                                <li>After clicking an icon, a popup will appear</li>
+                                <li>Look for the HTML code that looks like: <code>&lt;i class="fa-brands fa-linux"&gt;&lt;/i&gt;</code></li>
+                                <li>Copy <strong>only the class value</strong> — the part inside the quotes</li>
+                                <li>For example, copy: <code>fa-brands fa-linux</code></li>
+                            </ol>
+                        </section>
+                        
+                        <section class="help-section">
+                            <h4><i class="fa-solid fa-paste"></i> Step 3: Use in Settings</h4>
+                            <ol class="help-steps">
+                                <li>Open Settings <i class="fa-solid fa-gear"></i> and go to the Categories or Links tab</li>
+                                <li>Paste the icon code into the icon field (the first input box)</li>
+                                <li>You'll see a live preview of your icon appear</li>
+                            </ol>
+                        </section>
+                        
+                        <section class="help-section">
+                            <h4><i class="fa-solid fa-lightbulb"></i> Examples</h4>
+                            <ul class="icon-examples">
+                                <li><code>fa-solid fa-code</code> → <i class="fa-solid fa-code"></i> (solid style)</li>
+                                <li><code>fa-brands fa-github</code> → <i class="fa-brands fa-github"></i> (brand logo)</li>
+                                <li><code>fa-solid fa-gamepad</code> → <i class="fa-solid fa-gamepad"></i></li>
+                                <li><code>fa-brands fa-spotify</code> → <i class="fa-brands fa-spotify"></i></li>
+                            </ul>
+                            <p class="help-tip"><strong>Tip:</strong> Use <code>fa-solid</code> for general icons or <code>fa-brands</code> for company/brand logos.</p>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
@@ -296,9 +388,6 @@
                 </div>
             </div>
             <div class="toolbar-btns">
-                <button class="toolbar-btn" id="help-btn" title="Help">
-                    <i class="fa-solid fa-circle-question"></i>
-                </button>
                 <button class="toolbar-btn" id="settings-btn" title="Settings">
                     <i class="fa-solid fa-gear"></i>
                 </button>
@@ -327,6 +416,13 @@
             <span class="hint"><kbd>/</kbd> Search</span>
             <span class="hint"><kbd>1-4</kbd> Engine</span>
             <span class="hint"><kbd>Esc</kbd> Clear</span>
+        </div>
+        
+        <!-- Developer Credits -->
+        <div class="developer-credits">
+            <div class="credits-content">
+                <span class="credits-text">Developed by Vegvisir Design with help and support from the <a href="https://github.com" target="_blank" class="credits-link">GitHub Community</a></span>
+            </div>
         </div>
     </div>
 
