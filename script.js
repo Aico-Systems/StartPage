@@ -70,6 +70,11 @@ const allSearchEngines = {
         url: 'https://github.com/search?q=',
         icon: '<i class="fa-brands fa-github"></i>'
     },
+    git: {
+        name: 'Git',
+        url: 'https://git-scm.com/search/results?search=',
+        icon: '<i class="fa-brands fa-git-alt"></i>'
+    },
     youtube: {
         name: 'YouTube',
         url: 'https://www.youtube.com/results?search_query=',
