@@ -9,6 +9,13 @@
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
 // ========================================
+// Global Timer References (for cleanup)
+// ========================================
+
+let timeUpdateInterval = null;
+let weatherUpdateInterval = null;
+
+// ========================================
 // Default Data
 // ========================================
 
@@ -1342,14 +1349,15 @@ function executeCommand(input) {
 // ========================================
 
 function init() {
-    // Get DOM elements
-    searchInput = document.getElementById('search');
-    timeElement = document.getElementById('time');
-    dateElement = document.getElementById('date');
-    greetingElement = document.getElementById('greeting');
-    weatherElement = document.getElementById('weather');
-    quoteElement = document.getElementById('quote');
-    linksGrid = document. getElementById('links-grid');
+    try {
+        // Get DOM elements
+        searchInput = document.getElementById('search');
+        timeElement = document.getElementById('time');
+        dateElement = document.getElementById('date');
+        greetingElement = document.getElementById('greeting');
+        weatherElement = document.getElementById('weather');
+        quoteElement = document.getElementById('quote');
+        linksGrid = document. getElementById('links-grid');
     
     // Hide "New Window" option on Safari (it behaves the same as "New Tab")
     if (isSafari) {
@@ -1369,7 +1377,11 @@ function init() {
     
     // Update time immediately and every second
     updateDateTime();
-    setInterval(updateDateTime, 1000);
+    // Clear any existing interval before creating new one
+    if (timeUpdateInterval) {
+        clearInterval(timeUpdateInterval);
+    }
+    timeUpdateInterval = setInterval(updateDateTime, 1000);
     
     // Add click handler to time element to toggle format
     if (timeElement) {
@@ -1385,7 +1397,11 @@ function init() {
     
     // Update weather
     updateWeather();
-    setInterval(updateWeather, 600000);
+    // Clear any existing interval before creating new one
+    if (weatherUpdateInterval) {
+        clearInterval(weatherUpdateInterval);
+    }
+    weatherUpdateInterval = setInterval(updateWeather, 600000);
     
     // Set random quote
     updateQuote();
@@ -1410,6 +1426,13 @@ function init() {
     setTimeout(() => {
         if (searchInput) searchInput.focus();
     }, 700);
+    
+    } catch (error) {
+        // Log error but don't crash
+        console.error('Sip initialization error:', error);
+        // Attempt cleanup even if init fails
+        cleanup();
+    }
 }
 
 // ========================================
@@ -1538,7 +1561,28 @@ function showNotification(message, type = 'info') {
 }
 
 // ========================================
+// Cleanup Function
+// ========================================
+
+function cleanup() {
+    // Clear all intervals to prevent memory leaks
+    if (timeUpdateInterval) {
+        clearInterval(timeUpdateInterval);
+        timeUpdateInterval = null;
+    }
+    if (weatherUpdateInterval) {
+        clearInterval(weatherUpdateInterval);
+        weatherUpdateInterval = null;
+    }
+}
+
+// ========================================
 // Start the application
 // ========================================
 
 document.addEventListener('DOMContentLoaded', init);
+
+// Clean up when page is unloaded (extension disabled, tab closed, etc.)
+window.addEventListener('beforeunload', cleanup);
+window.addEventListener('pagehide', cleanup);
+window.addEventListener('unload', cleanup);
