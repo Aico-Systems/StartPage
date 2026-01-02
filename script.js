@@ -165,7 +165,10 @@ function loadSettings() {
         footerCenter: localStorage.getItem('footerCenter') ?? defaults.footerCenter,
         footerRight: localStorage.getItem('footerRight') ?? defaults.footerRight,
         socialLinks: JSON.parse(localStorage.getItem('socialLinks')) ?? defaults.socialLinks,
-        customColors: JSON.parse(localStorage.getItem('customColors') || JSON.stringify(defaults.customColors))
+        customColors: JSON.parse(localStorage.getItem('customColors') || JSON.stringify(defaults.customColors)),
+        backgroundImage: localStorage.getItem('backgroundImage') || null,
+        backgroundSize: localStorage.getItem('backgroundSize') || 'cover',
+        backgroundBlur: localStorage.getItem('backgroundBlur') === 'true'
     };
 }
 
@@ -309,6 +312,148 @@ function applyColorMode(mode) {
 // Apply saved theme and color scheme immediately
 applyTheme(settings.theme);
 applyColorScheme(settings.colorScheme);
+
+// ========================================
+// Background Image Management
+// ========================================
+
+function applyBackgroundImage() {
+    const body = document.body;
+    if (!body) return;
+    
+    if (settings.backgroundImage) {
+        body.style.backgroundImage = `url(${settings.backgroundImage})`;
+        
+        // Apply background size based on setting
+        switch (settings.backgroundSize) {
+            case 'contain':
+                body.style.backgroundSize = 'contain';
+                break;
+            case 'stretch':
+                body.style.backgroundSize = '100% 100%';
+                break;
+            case 'auto':
+                body.style.backgroundSize = 'auto';
+                break;
+            case 'cover':
+            default:
+                body.style.backgroundSize = 'cover';
+                break;
+        }
+        
+        body.style.backgroundPosition = 'center';
+        body.style.backgroundRepeat = 'no-repeat';
+        body.style.backgroundAttachment = 'fixed';
+        
+        // Apply blur if enabled
+        if (settings.backgroundBlur) {
+            // Create overlay to blur only the background
+            let overlay = document.getElementById('bg-blur-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'bg-blur-overlay';
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: -1;
+                    pointer-events: none;
+                    background-image: url(${settings.backgroundImage});
+                    background-size: ${body.style.backgroundSize};
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-attachment: fixed;
+                    filter: blur(10px);
+                `;
+                document.body.appendChild(overlay);
+            } else {
+                overlay.style.backgroundImage = `url(${settings.backgroundImage})`;
+                overlay.style.backgroundSize = body.style.backgroundSize;
+                overlay.style.filter = 'blur(10px)';
+            }
+            body.style.backgroundImage = '';
+        } else {
+            const overlay = document.getElementById('bg-blur-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+    } else {
+        body.style.backgroundImage = '';
+        const overlay = document.getElementById('bg-blur-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+}
+
+function handleBackgroundImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageData = e.target.result;
+        settings.backgroundImage = imageData;
+        saveSettings('backgroundImage', imageData);
+        applyBackgroundImage();
+        updateBackgroundImageUI();
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeBackgroundImage() {
+    settings.backgroundImage = null;
+    localStorage.removeItem('backgroundImage');
+    applyBackgroundImage();
+    updateBackgroundImageUI();
+}
+
+function updateBackgroundImageUI() {
+    const previewSection = document.getElementById('background-preview-section');
+    const previewImg = document.getElementById('background-preview');
+    const removeBtn = document.getElementById('remove-background-btn');
+    const sizeSection = document.getElementById('background-size-section');
+    const sizeSelect = document.getElementById('background-size-select');
+    const blurSection = document.getElementById('background-blur-section');
+    
+    if (settings.backgroundImage) {
+        previewImg.src = settings.backgroundImage;
+        previewSection.style.display = 'flex';
+        removeBtn.style.display = 'flex';
+        sizeSection.style.display = 'flex';
+        if (blurSection) blurSection.style.display = 'flex';
+        
+        if (sizeSelect) {
+            sizeSelect.value = settings.backgroundSize || 'cover';
+        }
+        
+        // Update blur toggle buttons
+        if (blurSection) {
+            const blurButtons = blurSection.querySelectorAll('.toggle-btn');
+            blurButtons.forEach(btn => {
+                if (btn.dataset.value === String(settings.backgroundBlur)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+    } else {
+        previewSection.style.display = 'none';
+        removeBtn.style.display = 'none';
+        sizeSection.style.display = 'none';
+        if (blurSection) blurSection.style.display = 'none';
+    }
+}
 
 // ========================================
 // DOM Elements
@@ -959,6 +1104,9 @@ function initSettings() {
                 updateHeader();
             } else if (setting === 'footerLeft' || setting === 'footerCenter' || setting === 'footerRight') {
                 updateFooter();
+            } else if (setting === 'backgroundBlur') {
+                settings.backgroundBlur = (value === 'true');
+                applyBackgroundImage();
             }
         });
     });
@@ -1090,6 +1238,32 @@ function initSettings() {
         });
     }
     
+    // Background image upload handlers
+    const backgroundImageBtn = document.getElementById('background-image-btn');
+    const backgroundImageInput = document.getElementById('background-image-input');
+    const removeBackgroundBtn = document.getElementById('remove-background-btn');
+    const backgroundSizeSelect = document.getElementById('background-size-select');
+    
+    if (backgroundImageBtn && backgroundImageInput) {
+        backgroundImageBtn.addEventListener('click', () => {
+            backgroundImageInput.click();
+        });
+        
+        backgroundImageInput.addEventListener('change', handleBackgroundImageUpload);
+    }
+    
+    if (removeBackgroundBtn) {
+        removeBackgroundBtn.addEventListener('click', removeBackgroundImage);
+    }
+    
+    if (backgroundSizeSelect) {
+        backgroundSizeSelect.addEventListener('change', (e) => {
+            settings.backgroundSize = e.target.value;
+            saveSettings('backgroundSize', e.target.value);
+            applyBackgroundImage();
+        });
+    }
+    
     // Search engine checkboxes
     document.querySelectorAll('#search-engine-options input').forEach(checkbox => {
         checkbox.addEventListener('change', () => {
@@ -1202,7 +1376,14 @@ function updateToggleStates() {
     document.querySelectorAll('.toggle-btn').forEach(btn => {
         const setting = btn.dataset.setting;
         const value = btn.dataset.value;
-        btn.classList.toggle('active', settings[setting] === value);
+        
+        // Handle boolean settings
+        if (setting === 'backgroundBlur') {
+            const isActive = settings[setting] === (value === 'true');
+            btn.classList.toggle('active', isActive);
+        } else {
+            btn.classList.toggle('active', settings[setting] === value);
+        }
     });
 }
 
@@ -1875,6 +2056,9 @@ function init() {
     updateHeader();
     updateFooter();
     
+    // Apply background image
+    applyBackgroundImage();
+    
     // Restore preferred search engine
     if (settings.enabledEngines.includes(settings.preferredEngine)) {
         setSearchEngine(settings.preferredEngine);
@@ -1887,6 +2071,9 @@ function init() {
     
     // Initialize settings
     initSettings();
+    
+    // Update background image UI
+    updateBackgroundImageUI();
     
     // Focus search input after a brief delay
     setTimeout(() => {

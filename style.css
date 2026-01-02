@@ -2412,7 +2412,8 @@ kbd {
 
 .credits-text {
     font-size: 0.75rem;
-    color: var(--overlay0);
+    color: var(--subtext0);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .credits-link {
@@ -2531,6 +2532,60 @@ kbd {
     .custom-colors-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* Background Image Controls */
+.background-image-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.file-picker-btn {
+    padding: 0.5rem 1rem;
+    background: var(--surface0);
+    border: 1px solid var(--surface1);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.file-picker-btn:hover {
+    background: var(--surface1);
+    border-color: var(--primary);
+}
+
+.file-picker-btn.remove-btn {
+    background: var(--red);
+    border-color: var(--red);
+    color: #ffffff;
+}
+
+.file-picker-btn.remove-btn:hover {
+    background: #f38ba8;
+    border-color: #f38ba8;
+    color: #ffffff;
+}
+
+.background-preview-container {
+    width: 100%;
+    max-width: 300px;
+    height: 150px;
+    border: 1px solid var(--surface1);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--surface0);
+}
+
+.background-preview-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Drag and Drop Styles */
