@@ -9,8 +9,6 @@ export const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ENT
 // Imported backups could carry javascript: links; never render those as clickable.
 export const safeUrl = (url) => (/^\s*javascript:/i.test(url ?? '') ? '#' : url);
 
-export const iconHtml = (classes, fallback = 'fa-solid fa-link') => `<i class="${esc(classes || fallback)}"></i>`;
-
 export function setText(el, text) {
     if (el && el.textContent !== text) el.textContent = text;
 }

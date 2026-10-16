@@ -1,43 +1,49 @@
-# A.I.C.O StartPage
+# AICO start page
 
-Browser start page for AICO Systems, served from GitHub Pages at <https://aico-systems.github.io/StartPage> and loaded as the new tab page via the New Tab Override extension. Forked from Sip by Bryan Gibson.
+The team's new tab page, live at <https://aico-systems.github.io/StartPage> (point New Tab Override, or your browser's home page, at it). It shares its look with the Mandy landing page: blueprint's greys and orange, Archivo, light or dark following the system.
 
-Static files, no build step. Settings live in the browser's `localStorage`; the background image lives in IndexedDB.
+Static files, no build step. Pushing to `main` deploys.
+
+## Links
+
+- **Team links** live in [`js/team.js`](js/team.js). Edit, push, and everyone has them on their next tab.
+- **Personal links** are added in Settings and stay in that browser. Export/Import in Settings moves them.
+
+Logos come from the link's address: brands from Simple Icons (`js/marks.js`), our own domains get the AICO mark, anything else its initial. To add a brand, put its [Simple Icons](https://simpleicons.org) slug and hosts in `tools/marks.mjs` and run:
+
+```sh
+node tools/marks.mjs path/to/node_modules/simple-icons   # e.g. ../Aicoyo/landing/node_modules/simple-icons
+```
 
 ## Using it
 
-- Start typing anywhere to search. <kbd>/</kbd> focuses the box, <kbd>1</kbd>–<kbd>9</kbd> switch engines.
-- Typing also highlights matching links. <kbd>Tab</kbd> / <kbd>↓</kbd> step through them, <kbd>Enter</kbd> opens one.
-- `!gh query`, `!yt query`, `!w query` … search a single engine (bangs are listed in Settings → Search).
-- `localhost:5173`, `10.42.0.1:8080`, `github.com/Aico-Systems` open directly.
-- <kbd>Ctrl</kbd>+<kbd>Enter</kbd> opens the search or link in a new tab.
-- `:settings`, `:theme dark`, `:theme light` run commands.
+- Just start typing. Matching links stay lit; <kbd>Tab</kbd> picks one, <kbd>Enter</kbd> opens it.
+- `!gh query`, `!yt query`, `!c question` search one engine; the bangs are listed in Settings.
+- `localhost:5173`, `10.42.0.1:8080`, `docs.aicoflow.com/api` open directly.
+- <kbd>1</kbd>–<kbd>9</kbd> switch engine, <kbd>Ctrl</kbd>+<kbd>Enter</kbd> opens in a new tab, <kbd>/</kbd> focuses the box.
+- Click the time to switch between 24- and 12-hour.
 
-Weather comes from [Open-Meteo](https://open-meteo.com) (no API key) and is cached for 30 minutes.
+Weather comes from [Open-Meteo](https://open-meteo.com) (no key) and is cached for 30 minutes.
 
-## Layout
+## Files
 
 ```
-index.html        page shell, settings dialog markup
-css/themes.css    color schemes (palette only)
-css/main.css      layout and components
-js/boot.js        applies the saved theme before first paint
-js/main.js        module entry
-js/store.js       settings schema, persistence, backup import/export
-js/defaults.js    default categories, links, socials, quotes
-js/appearance.js  theme attributes, background image
-js/widgets.js     greeting, clock, weather, quote, socials, slot placement
-js/grid.js        link grid and link filtering
-js/search.js      engines, bangs, URL detection, keyboard shortcuts
-js/settings.js    settings dialog
-js/util.js        DOM helpers
-fonts/            JetBrains Mono subsets (Latin + three Nerd Font glyphs)
+index.html         page and settings sheet
+css/main.css       all styles
+js/boot.js         light/dark and motion, before first paint
+js/main.js         entry
+js/team.js         the shared links
+js/store.js        per-browser settings and personal links, backup
+js/directory.js    the link directory, filtering, logos
+js/now.js          greeting, clock, date, weather
+js/search.js       engines, bangs, addresses, keyboard
+js/settings.js     settings sheet
+js/marks.js        generated brand logos
+js/util.js         small DOM helpers
+tools/marks.mjs    builds js/marks.js
+fonts/archivo.woff2
 ```
 
-## Development
+Run locally with `python3 -m http.server` (modules need http://).
 
-```sh
-python3 -m http.server 8000   # ES modules need http://, not file://
-```
-
-Pushing to `main` deploys to GitHub Pages.
+Started as a fork of Sip by Bryan Gibson.

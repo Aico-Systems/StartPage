@@ -1,24 +1,12 @@
-// Runs synchronously in <head> so the saved theme is in place before first paint.
-// Kept as a classic script (not a module) because modules are deferred.
+// Runs in <head> before first paint: light or dark (the system's choice unless overridden), and motion.
+// A classic script, not a module, because modules are deferred.
 (() => {
     const root = document.documentElement;
     const get = (key) => {
         try { return localStorage.getItem(key); } catch { return null; }
     };
-
-    root.dataset.scheme = get('colorScheme') || 'catppuccin';
-    root.dataset.theme = get('theme') || 'dark';
-    root.dataset.colorMode = get('colorMode') || 'multi';
-    root.dataset.bgSize = get('backgroundSize') || 'cover';
-    root.classList.toggle('bg-blur', get('backgroundBlur') === 'true');
-    root.classList.toggle('no-animations', get('animateBackground') === 'false');
-
-    if (root.dataset.scheme === 'custom') {
-        try {
-            const colors = JSON.parse(get('customColors')) || {};
-            for (const [name, value] of Object.entries(colors)) {
-                root.style.setProperty(`--custom-${name}`, value);
-            }
-        } catch { /* fall back to the CSS defaults */ }
-    }
+    const appearance = get('appearance') || 'system';
+    const dark = appearance === 'dark' || (appearance === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.classList.toggle('dark', dark);
+    root.classList.toggle('still', get('motion') === 'false');
 })();
