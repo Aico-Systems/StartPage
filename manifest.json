@@ -32,8 +32,8 @@
     {
       "resources": [
         "fonts/*",
-        "style.css",
-        "script.js"
+        "css/*",
+        "js/*"
       ],
       "matches": ["<all_urls>"]
     }
