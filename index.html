@@ -7,8 +7,8 @@
     <meta name="color-scheme" content="light dark">
     <!-- The page brings its own dark mode; keep Dark Reader from re-processing it. -->
     <meta name="darkreader-lock">
-    <title>AICO</title>
-    <link rel="icon" type="image/png" href="assets/logo-64.png">
+    <title>Mandy</title>
+    <link rel="icon" type="image/svg+xml" href="assets/mandy.svg">
 
     <script src="js/boot.js"></script>
 
@@ -19,6 +19,7 @@
     <link rel="modulepreload" href="js/team.js">
     <link rel="modulepreload" href="js/util.js">
     <link rel="modulepreload" href="js/marks.js">
+    <link rel="modulepreload" href="js/learn.js">
     <link rel="modulepreload" href="js/directory.js">
     <link rel="modulepreload" href="js/now.js">
     <link rel="modulepreload" href="js/search.js">
@@ -29,7 +30,7 @@
 <body>
     <header class="top">
         <div class="brand">
-            <span class="wordmark">AICO</span>
+            <span class="wordmark">Mandy</span>
             <span class="tagline">Team start page</span>
         </div>
         <button type="button" class="top-action" id="settings-open">Settings</button>
@@ -129,6 +130,21 @@
                 <p>They appear after the team’s. The logo comes from the address.</p>
                 <div id="personal-editor"></div>
                 <button type="button" class="text-button" id="add-section">Add a group</button>
+            </section>
+
+            <section>
+                <h3>Learning</h3>
+                <p>The page learns which sites you use and reshapes itself around them. What you use that isn’t listed shows up under Frequent, links you never open fold into Rarely opened, and links whose address stops existing disappear. It learns from what you open here, and with the Mandy Start extension from everything you browse. All of it stays in this browser.</p>
+                <p class="status" id="learn-status"></p>
+                <div class="button-row">
+                    <a class="pill" href="extension/mandy-start.xpi">Install for Zen or Firefox</a>
+                    <a class="pill quiet" href="https://github.com/Aico-Systems/StartPage/tree/main/extension#readme" target="_blank" rel="noopener">Chrome and others</a>
+                </div>
+                <p class="fine">In Zen, set <code>xpinstall.signatures.required</code> to <code>false</code> in <code>about:config</code> before installing.</p>
+                <div class="button-row">
+                    <button type="button" class="text-button" id="learn-unhide">Suggest hidden sites again</button>
+                    <button type="button" class="text-button danger" id="learn-forget">Forget what it learned</button>
+                </div>
             </section>
 
             <section>

@@ -2,8 +2,9 @@
 // the personal link editor and the backup buttons have their own handlers.
 
 import { markHtml } from './directory.js';
+import { forget, model } from './learn.js';
 import { ENGINES } from './search.js';
-import { exportBackup, importBackup, on, parse, set, settings } from './store.js';
+import { emit, exportBackup, importBackup, on, parse, set, settings } from './store.js';
 import { $, $$, download, esc, move, sortable, toast } from './util.js';
 
 let sheet;
@@ -103,6 +104,39 @@ function initPersonalEditor() {
     });
 }
 
+// ---- learning ----
+
+function ago(time) {
+    const minutes = Math.round((Date.now() - time) / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.round(minutes / 60);
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+}
+
+function renderLearning() {
+    const { source, at, total, gone, hidden } = model(new Set());
+    const lines = [source === 'browser'
+        ? `Learning from your browser history: ${total.toLocaleString('en')} visits from the last 90 days, read ${ago(at)}.`
+        : 'Learning from what you open here. Install the extension and it learns from everything you browse.'];
+    if (gone.size) lines.push(`Hidden because the address no longer exists: ${[...gone].join(', ')}.`);
+    $('#learn-status').textContent = lines.join(' ');
+    $('#learn-unhide').hidden = hidden === 0;
+}
+
+function initLearning() {
+    $('#learn-unhide').addEventListener('click', () => {
+        forget({ hiddenOnly: true });
+        emit('learning');
+    });
+    $('#learn-forget').addEventListener('click', () => {
+        if (!confirm('Forget the sites this page has learned you use? Your links and settings stay.')) return;
+        forget();
+        emit('learning');
+    });
+    on('learning', renderLearning);
+}
+
 // ---- backup ----
 
 function initBackup() {
@@ -134,6 +168,7 @@ function initBackup() {
 export function openSettings() {
     syncControls();
     renderPersonal();
+    renderLearning();
     sheet.showModal();
 }
 
@@ -141,6 +176,7 @@ export function initSettings() {
     sheet = $('#settings');
     renderEngineList();
     initPersonalEditor();
+    initLearning();
     initBackup();
 
     $('#settings-close').addEventListener('click', () => sheet.close());

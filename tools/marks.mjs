@@ -1,27 +1,31 @@
-// Builds js/marks.js: the brand marks links can show, taken from Simple Icons (CC0).
+// Builds js/marks.js: the logos links can show. Brands from Simple Icons (CC0) as SVG paths; brands
+// Simple Icons lacks get their own site icon, fetched once into assets/marks/ (as the landing page does).
 // Usage: node tools/marks.mjs <path to node_modules/simple-icons>
-// Add a brand by putting its Simple Icons slug and the hosts it lives on in BRANDS, then rerun.
+// Add a brand to BRANDS (Simple Icons slug: hosts) or SITE_ICONS (name: domain to take the icon from,
+// hosts), then rerun.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // slug: hosts. A host matches itself and its subdomains; one ending in "." matches as a prefix ("argocd.").
 const BRANDS = {
     github: ['github.com'], gitlab: ['gitlab.com'], codeberg: ['codeberg.org'],
-    linear: ['linear.app'], atlassian: ['atlassian.net', 'atlassian.com'], trello: ['trello.com'],
+    linear: ['linear.app'], atlassian: ['atlassian.net', 'atlassian.com'], confluence: [], jira: [], trello: ['trello.com'],
+    travisci: ['travis-ci.com'], personio: ['personio.com'], kimi: ['kimi.com', 'kimi.ai'], mintlify: ['mintlify.com'],
+    penpot: ['penpot.app'], modal: ['modal.com'], sap: ['sapbydesign.com'],
     gmail: ['mail.google.com', 'gmail.com'], googlecalendar: ['calendar.google.com'],
     googledrive: ['drive.google.com'], googledocs: ['docs.google.com'], googlemeet: ['meet.google.com'],
     googlemaps: ['maps.google.com'], googlecloud: ['console.cloud.google.com', 'cloud.google.com'],
-    googlegemini: ['gemini.google.com', 'aistudio.google.com'], googletranslate: ['translate.google.com'],
+    googlegemini: ['gemini.google.com'], googletranslate: ['translate.google.com'],
     google: ['google.com', 'google.de'],
     hetzner: ['hetzner.cloud', 'hetzner.com'], cloudflare: ['cloudflare.com'], digitalocean: ['digitalocean.com'],
     vercel: ['vercel.com'], netlify: ['netlify.com', 'netlify.app'], railway: ['railway.app', 'railway.com'],
     flydotio: ['fly.io'], render: ['render.com'], tailscale: ['tailscale.com'], docker: ['docker.com'],
     argo: ['argocd.'], grafana: ['grafana.com', 'grafana.'], sentry: ['sentry.io'], posthog: ['posthog.com'],
     supabase: ['supabase.com'], proxmox: ['proxmox.'], portainer: ['portainer.'],
-    claude: ['claude.ai'], anthropic: ['anthropic.com'], deepseek: ['deepseek.com'], perplexity: ['perplexity.ai'],
+    claude: ['claude.ai', 'claude.com'], anthropic: ['anthropic.com'], deepseek: ['deepseek.com'], perplexity: ['perplexity.ai'],
     mistralai: ['mistral.ai'], huggingface: ['huggingface.co'], ollama: ['ollama.com'], openrouter: ['openrouter.ai'],
-    elevenlabs: ['elevenlabs.io'], deepgram: ['deepgram.com'], livekit: ['livekit.io'], n8n: ['n8n.io', 'n8n.'],
+    elevenlabs: ['elevenlabs.io'], deepgram: ['deepgram.com'], livekit: ['livekit.io'], n8n: ['n8n.io', 'n8n.cloud', 'n8n.'],
     cursor: ['cursor.com'], v0: ['v0.dev', 'v0.app'], replit: ['replit.com'],
     stackoverflow: ['stackoverflow.com'], npm: ['npmjs.com'], bun: ['bun.sh', 'bun.com'], svelte: ['svelte.dev'],
     codesandbox: ['codesandbox.io'], stackblitz: ['stackblitz.com'],
@@ -36,6 +40,27 @@ const BRANDS = {
     reddit: ['reddit.com'], x: ['x.com', 'twitter.com'], mastodon: ['mastodon.social'], instagram: ['instagram.com'],
     wikipedia: ['wikipedia.org'], deepl: ['deepl.com'], bitwarden: ['bitwarden.com'], '1password': ['1password.com'],
     nextcloud: ['nextcloud.'], homeassistant: ['homeassistant.'], immich: ['immich.'], jellyfin: ['jellyfin.'],
+};
+
+// name: [domain whose icon to use, ...hosts it stands for]
+const SITE_ICONS = {
+    outlook: ['outlook.live.com', 'outlook.cloud.microsoft', 'outlook.office.com', 'outlook.live.com'],
+    teams: ['teams.microsoft.com', 'teams.cloud.microsoft', 'teams.microsoft.com'],
+    microsoft: ['onedrive.live.com', 'sharepoint.com', 'onedrive.live.com', 'office.com', 'microsoft365.com', 'cloud.microsoft'],
+    chatgpt: ['chatgpt.com', 'chatgpt.com', 'openai.com'],
+    aistudio: ['aistudio.google.com', 'aistudio.google.com'],
+    twilio: ['twilio.com', 'twilio.com'],
+    telnyx: ['telnyx.com', 'telnyx.com'],
+    doppler: ['doppler.com', 'doppler.com'],
+    logto: ['logto.io', 'logto.io'],
+    heydata: ['heydata.eu', 'heydata.eu'],
+    fyrst: ['fyrst.de', 'fyrst.de'],
+    accountable: ['accountable.de', 'accountable.de'],
+    elster: ['elster.de', 'elster.de'],
+    proglove: ['docs.proglove.com', 'proglove.com', 'proglove.de'],
+    insight: ['insight.proglove.com', 'insight.proglove.com'],
+    aws: ['aws.amazon.com', 'aws.amazon.com', 'awsapps.com', 'signin.aws'],
+    linkedin: ['linkedin.com', 'linkedin.com'],
 };
 
 const dir = process.argv[2] ?? 'node_modules/simple-icons';
@@ -60,10 +85,21 @@ for (const [slug, slugHosts] of Object.entries(BRANDS)) {
     marks[slug] = { hex, path, ...(l < 0.06 && { dark: true }), ...(l > 0.75 && { light: true }) };
     for (const host of slugHosts) hosts.push([host, slug]);
 }
+mkdirSync('assets/marks', { recursive: true });
+for (const [name, [from, ...siteHosts]] of Object.entries(SITE_ICONS)) {
+    const response = await fetch(`https://www.google.com/s2/favicons?domain=${from}&sz=128`);
+    if (!response.ok) throw new Error(`no icon for ${from}`);
+    const ext = response.headers.get('content-type')?.includes('jpeg') ? 'jpg' : 'png';
+    writeFileSync(`assets/marks/${name}.${ext}`, Buffer.from(await response.arrayBuffer()));
+    marks[name] = { img: `assets/marks/${name}.${ext}` };
+    for (const host of new Set(siteHosts)) hosts.push([host, name]);
+}
+
 hosts.sort((a, b) => b[0].length - a[0].length);
 
 writeFileSync('js/marks.js', `// Generated by tools/marks.mjs from Simple Icons (CC0). Do not edit by hand.
-// \`dark\`/\`light\`: the brand colour is too close to black/white to read on a tile of that tone.
+// A mark is an SVG path in the brand colour (\`dark\`/\`light\`: too close to black/white for a tile of
+// that tone) or a site icon image (\`img\`).
 
 export const MARKS = ${JSON.stringify(marks)};
 

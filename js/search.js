@@ -73,7 +73,8 @@ function submit(e) {
     }
     const link = selectedLink();
     const url = link ? link.href : resolve(input.value)[0];
-    if (url) openUrl(url, { newTab: e.ctrlKey || e.metaKey });
+    const title = link ? link.querySelector('.name').textContent : '';
+    if (url) openUrl(url, { newTab: e.ctrlKey || e.metaKey, title });
 }
 
 export function setEngine(id) {

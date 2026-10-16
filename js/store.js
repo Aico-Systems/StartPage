@@ -86,10 +86,15 @@ export function on(keys, fn) {
     }
 }
 
+/** Tell subscribers `key` changed; `set` does this, and so can state kept outside the settings. */
+export function emit(key, value = settings[key]) {
+    for (const fn of [...(listeners.get(key) ?? []), ...(listeners.get('*') ?? [])]) fn(value, key);
+}
+
 export function set(key, value) {
     settings[key] = value;
     storage.set(key, SCHEMA[key][0] === 'json' ? JSON.stringify(value) : String(value));
-    for (const fn of [...(listeners.get(key) ?? []), ...(listeners.get('*') ?? [])]) fn(value, key);
+    emit(key, value);
 }
 
 /** Convert a form control's string into the setting's type. */

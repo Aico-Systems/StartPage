@@ -120,7 +120,8 @@ kbd {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.5rem var(--gutter);
+    padding: 1.5rem var(--gutter) 2.5rem;
+    background: linear-gradient(var(--paper) 55%, transparent);
     pointer-events: none;
 }
 
@@ -166,13 +167,23 @@ kbd {
 .page {
     display: grid;
     grid-template-columns: minmax(0, clamp(20rem, 32vw, 30rem)) minmax(0, 1fr);
-    align-items: center;
+    align-items: start;
     gap: clamp(2rem, 5vw, 7rem);
     max-width: 1680px;
     min-height: 100vh;
     min-height: 100svh;
     margin: 0 auto;
     padding: 6.5rem clamp(1.25rem, 5vw, 4.5rem) 4rem;
+}
+
+/* the time and the search stay put in the middle of the screen while a long directory scrolls past */
+.now {
+    position: sticky;
+    top: 6.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100svh - 10.5rem);
 }
 
 .greeting {
@@ -338,6 +349,7 @@ kbd {
 /* ---------- link directory ---------- */
 
 .directory {
+    align-self: center;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
     gap: 2.5rem clamp(1.25rem, 2.5vw, 2.5rem);
@@ -458,6 +470,86 @@ kbd {
 
 .link.selected .name::after {
     transform: scaleX(1);
+}
+
+/* Frequent: learned, so each one can be sent away */
+.group li {
+    position: relative;
+}
+
+.dismiss {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-size: 1.1rem;
+    line-height: 1;
+    opacity: 0;
+    translate: 0 -50%;
+    transition: opacity 0.2s;
+}
+
+.group li:hover .dismiss,
+.dismiss:focus-visible {
+    opacity: 1;
+}
+
+.dismiss:hover {
+    color: var(--ink);
+}
+
+/* Rarely opened: folded until asked for, or until a search matches inside it */
+.fold {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+}
+
+.fold span {
+    margin-left: 0.3em;
+    color: var(--ink-soft);
+}
+
+.fold::after {
+    content: '';
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-left: 0.5em;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    rotate: 45deg;
+    translate: 0 -0.2em;
+    transition: rotate 0.25s var(--ease);
+}
+
+.fold:hover {
+    color: var(--ink);
+}
+
+.quiet.open .fold::after {
+    rotate: 225deg;
+    translate: 0 0.1em;
+}
+
+.quiet:not(.open) ul {
+    display: none;
+}
+
+.filtering .quiet:has(.match) ul {
+    display: grid;
+}
+
+.quiet .link {
+    opacity: 0.75;
 }
 
 /* typing in the search box leaves only the matching links standing */
@@ -809,6 +901,21 @@ kbd {
     color: var(--ink);
 }
 
+.sheet .status {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.sheet .fine {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+}
+
+.sheet .button-row + .button-row {
+    margin-top: 0.5rem;
+}
+
 .keys {
     display: grid;
     grid-template-columns: max-content 1fr;
@@ -838,6 +945,16 @@ kbd {
 .pill.quiet {
     border: 1px solid var(--glass-edge);
     background: var(--glass-fill-strong);
+    color: var(--ink);
+}
+
+.sheet a.pill {
+    display: inline-block;
+    color: var(--paper);
+    text-decoration: none;
+}
+
+.sheet a.pill.quiet {
     color: var(--ink);
 }
 
@@ -871,6 +988,11 @@ kbd {
         align-content: start;
         gap: 3.5rem;
         padding-top: 7rem;
+    }
+
+    .now {
+        position: static;
+        min-height: 0;
     }
 
     .sheet {
