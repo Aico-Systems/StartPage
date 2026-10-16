@@ -6,7 +6,13 @@ The page asks, the extension reads the last 90 days of history and answers with 
 
 ## Install
 
-**Zen** (or Firefox Developer Edition / Nightly): open `about:config`, set `xpinstall.signatures.required` to `false`, then open the start page's Settings → Learning → *Install for Zen or Firefox* (or open `https://aico-systems.github.io/StartPage/extension/mandy-start.xpi`). Regular Firefox only installs signed extensions; it would need signing through addons.mozilla.org first.
+**Zen** (or Firefox Developer Edition / Nightly):
+
+1. In `about:config`, set `xpinstall.signatures.required` to `false`.
+2. Download [`mandy-start.xpi`](https://aico-systems.github.io/StartPage/extension/mandy-start.xpi) (also in the start page's Settings → Learning).
+3. In `about:addons`, open the gear menu, choose *Install Add-on From File…*, pick the file and confirm.
+
+Regular Firefox only installs signed extensions; it would need signing through addons.mozilla.org first.
 
 **Chrome, Brave, Edge, Arc**: download this folder (or clone the repo), open `chrome://extensions`, turn on *Developer mode*, choose *Load unpacked* and pick the `extension` folder.
 
