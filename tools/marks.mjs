@@ -42,25 +42,25 @@ const BRANDS = {
     nextcloud: ['nextcloud.'], homeassistant: ['homeassistant.'], immich: ['immich.'], jellyfin: ['jellyfin.'],
 };
 
-// name: [domain whose icon to use, ...hosts it stands for]
+// name: [title, domain whose icon to use, ...hosts it stands for]
 const SITE_ICONS = {
-    outlook: ['outlook.live.com', 'outlook.cloud.microsoft', 'outlook.office.com', 'outlook.live.com'],
-    teams: ['teams.microsoft.com', 'teams.cloud.microsoft', 'teams.microsoft.com'],
-    microsoft: ['onedrive.live.com', 'sharepoint.com', 'onedrive.live.com', 'office.com', 'microsoft365.com', 'cloud.microsoft'],
-    chatgpt: ['chatgpt.com', 'chatgpt.com', 'openai.com'],
-    aistudio: ['aistudio.google.com', 'aistudio.google.com'],
-    twilio: ['twilio.com', 'twilio.com'],
-    telnyx: ['telnyx.com', 'telnyx.com'],
-    doppler: ['doppler.com', 'doppler.com'],
-    logto: ['logto.io', 'logto.io'],
-    heydata: ['heydata.eu', 'heydata.eu'],
-    fyrst: ['fyrst.de', 'fyrst.de'],
-    accountable: ['accountable.de', 'accountable.de'],
-    elster: ['elster.de', 'elster.de'],
-    proglove: ['docs.proglove.com', 'proglove.com', 'proglove.de'],
-    insight: ['insight.proglove.com', 'insight.proglove.com'],
-    aws: ['aws.amazon.com', 'aws.amazon.com', 'awsapps.com', 'signin.aws'],
-    linkedin: ['linkedin.com', 'linkedin.com'],
+    outlook: ['Outlook', 'outlook.live.com', 'outlook.cloud.microsoft', 'outlook.office.com', 'outlook.live.com'],
+    teams: ['Teams', 'teams.microsoft.com', 'teams.cloud.microsoft', 'teams.microsoft.com'],
+    microsoft: ['Microsoft 365', 'onedrive.live.com', 'sharepoint.com', 'onedrive.live.com', 'office.com', 'microsoft365.com', 'cloud.microsoft'],
+    chatgpt: ['ChatGPT', 'chatgpt.com', 'chatgpt.com', 'openai.com'],
+    aistudio: ['AI Studio', 'aistudio.google.com', 'aistudio.google.com'],
+    twilio: ['Twilio', 'twilio.com', 'twilio.com'],
+    telnyx: ['Telnyx', 'telnyx.com', 'telnyx.com'],
+    doppler: ['Doppler', 'doppler.com', 'doppler.com'],
+    logto: ['Logto', 'logto.io', 'logto.io'],
+    heydata: ['heyData', 'heydata.eu', 'heydata.eu'],
+    fyrst: ['FYRST', 'fyrst.de', 'fyrst.de'],
+    accountable: ['Accountable', 'accountable.de', 'accountable.de'],
+    elster: ['Elster', 'elster.de', 'elster.de'],
+    proglove: ['ProGlove', 'docs.proglove.com', 'proglove.com', 'proglove.de'],
+    insight: ['Insight', 'insight.proglove.com', 'insight.proglove.com'],
+    aws: ['AWS', 'aws.amazon.com', 'aws.amazon.com', 'awsapps.com', 'signin.aws'],
+    linkedin: ['LinkedIn', 'linkedin.com', 'linkedin.com'],
 };
 
 const dir = process.argv[2] ?? 'node_modules/simple-icons';
@@ -82,16 +82,16 @@ for (const [slug, slugHosts] of Object.entries(BRANDS)) {
     const hex = catalog.find((icon) => icon.slug === slug || icon.title === title)?.hex;
     if (!hex) throw new Error(`no colour for ${slug}`);
     const l = luminance(hex);
-    marks[slug] = { hex, path, ...(l < 0.06 && { dark: true }), ...(l > 0.75 && { light: true }) };
+    marks[slug] = { title, hex, path, ...(l < 0.06 && { dark: true }), ...(l > 0.75 && { light: true }) };
     for (const host of slugHosts) hosts.push([host, slug]);
 }
 mkdirSync('assets/marks', { recursive: true });
-for (const [name, [from, ...siteHosts]] of Object.entries(SITE_ICONS)) {
+for (const [name, [title, from, ...siteHosts]] of Object.entries(SITE_ICONS)) {
     const response = await fetch(`https://www.google.com/s2/favicons?domain=${from}&sz=128`);
     if (!response.ok) throw new Error(`no icon for ${from}`);
     const ext = response.headers.get('content-type')?.includes('jpeg') ? 'jpg' : 'png';
     writeFileSync(`assets/marks/${name}.${ext}`, Buffer.from(await response.arrayBuffer()));
-    marks[name] = { img: `assets/marks/${name}.${ext}` };
+    marks[name] = { title, img: `assets/marks/${name}.${ext}` };
     for (const host of new Set(siteHosts)) hosts.push([host, name]);
 }
 

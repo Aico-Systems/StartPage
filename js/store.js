@@ -15,6 +15,7 @@ const SCHEMA = {
     autoFocusSearch: ['bool', true],
     linkBehavior: ['string', 'same'],
     personal: ['json', []],
+    engineOptOut: ['json', []],
 };
 
 export const storage = {

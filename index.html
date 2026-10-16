@@ -19,6 +19,8 @@
     <link rel="modulepreload" href="js/team.js">
     <link rel="modulepreload" href="js/util.js">
     <link rel="modulepreload" href="js/marks.js">
+    <link rel="modulepreload" href="js/bridge.js">
+    <link rel="modulepreload" href="js/match.js">
     <link rel="modulepreload" href="js/learn.js">
     <link rel="modulepreload" href="js/directory.js">
     <link rel="modulepreload" href="js/now.js">
@@ -44,9 +46,9 @@
             <p class="weather arrive" id="weather" style="--i: 2"></p>
 
             <div class="search arrive" style="--i: 3">
-                <input type="text" id="search" autocomplete="off" spellcheck="false"
-                    aria-label="Search the web or jump to a link" aria-describedby="search-hint">
-                <span class="search-hint" id="search-hint" aria-live="polite"></span>
+                <input type="text" id="search" autocomplete="off" spellcheck="false" role="combobox"
+                    aria-label="Search the web, or find a link, tab or page" aria-controls="results" aria-autocomplete="list">
+                <ul class="results" id="results" role="listbox" aria-label="Results" hidden></ul>
             </div>
             <nav class="engines arrive" id="engines" aria-label="Search engine" style="--i: 4"></nav>
         </div>
@@ -121,8 +123,9 @@
 
             <section>
                 <h3>Search engines</h3>
-                <p>Checked engines sit under the search box and get the number keys, in this order. Every engine also answers to its bang: <code>!gh bun elysia</code>.</p>
+                <p>Engines you use often join the row under the search box by themselves, and the one you use most comes first. Uncheck one to keep it out. Every engine answers to its bang or the start of its name: <code>!gh bun elysia</code>, <code>!wiki</code>.</p>
                 <div class="engine-list" id="engine-list"></div>
+                <p class="status" id="learned-searches"></p>
             </section>
 
             <section>
@@ -156,7 +159,8 @@
                 <h3>Keyboard</h3>
                 <dl class="keys">
                     <dt>Just type</dt><dd>Search from anywhere on the page</dd>
-                    <dt><kbd>Tab</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Pick one of the links that match, <kbd>Enter</kbd> opens it</dd>
+                    <dt><kbd>Tab</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move through the results, <kbd>Enter</kbd> opens the highlighted one</dd>
+                    <dt><code>youtube lofi</code></dt><dd>Start with an engine’s name to offer a search there</dd>
                     <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Switch search engine</dd>
                     <dt><kbd>Ctrl</kbd> <kbd>Enter</kbd></dt><dd>Open in a new tab</dd>
                     <dt><code>localhost:5173</code></dt><dd>Addresses and IPs open directly</dd>

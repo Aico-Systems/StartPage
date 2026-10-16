@@ -3,7 +3,7 @@
 
 import { markHtml } from './directory.js';
 import { forget, model } from './learn.js';
-import { ENGINES } from './search.js';
+import { ENGINES, engineState } from './search.js';
 import { emit, exportBackup, importBackup, on, parse, set, settings } from './store.js';
 import { $, $$, download, esc, move, sortable, toast } from './util.js';
 
@@ -29,7 +29,11 @@ function syncControls() {
             el.value = value;
         }
     }
-    for (const box of $$('#engine-list input')) box.checked = settings.enabledEngines.includes(box.value);
+    const { row, learned } = engineState();
+    for (const box of $$('#engine-list input')) box.checked = row.includes(box.value);
+    $('#learned-searches').textContent = learned.length
+        ? `Learned from your searches: ${learned.map((search) => `!${search.bang} for ${search.name}`).join(', ')}.`
+        : '';
 }
 
 // ---- personal links ----
@@ -203,10 +207,18 @@ export function initSettings() {
     });
     $('[data-setting="userName"]', sheet).addEventListener('input', (e) => set('userName', e.target.value.trim()));
 
-    $('#engine-list').addEventListener('change', () => {
+    // Checked engines are kept; unchecking one that joined by use keeps it out from then on.
+    $('#engine-list').addEventListener('change', (e) => {
         const enabled = $$('#engine-list input:checked').map((box) => box.value);
-        if (enabled.length) set('enabledEngines', enabled);
-        else syncControls(); // keep at least one
+        if (!enabled.length) {
+            syncControls(); // keep at least one
+            return;
+        }
+        const { value, checked } = e.target;
+        set('engineOptOut', checked
+            ? settings.engineOptOut.filter((id) => id !== value)
+            : [...new Set([...settings.engineOptOut, value])]);
+        set('enabledEngines', enabled);
     });
 
     on('*', () => {

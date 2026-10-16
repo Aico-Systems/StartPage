@@ -1,17 +1,20 @@
 // What the page learns about how each person works, so the team's defaults turn into everyone's own page.
 //
 // Sources, both kept only in this browser:
-//  - visits made from this page (links clicked, addresses typed), always;
+//  - what is opened and searched from this page, always;
 //  - the browser's own history, when the Mandy Start extension is installed (extension/).
 //
-// From them come three things the directory uses:
-//  - frequent: sites someone uses a lot that aren't on the page yet;
+// From them come:
+//  - frequent: sites and pages someone uses a lot that aren't on the page yet;
 //  - quiet: links on the page they haven't opened in a long while (needs the browser history to judge);
-//  - gone: links whose address no longer exists in DNS, checked now and then over DNS-over-HTTPS.
+//  - gone: links whose address no longer exists in DNS, checked now and then over DNS-over-HTTPS;
+//  - searches: how often each search box is used, which orders the engines and teaches new bangs.
 
+import { ask, noteAnswer } from './bridge.js';
 import { hostOf, storage } from './store.js';
 
 const VISITS = 'learn.visits';
+const SEARCHES = 'learn.searches';
 const BROWSING = 'learn.browsing';
 const HIDDEN = 'learn.hidden';
 const HEALTH = 'learn.health';
@@ -19,6 +22,7 @@ const HEALTH = 'learn.health';
 const DAY = 86_400_000;
 const BROWSING_TTL = 60 * 60 * 1000;
 const QUIET_AFTER = 45 * DAY;
+const FREQUENT_SITES = 5;
 const FREQUENT_COUNT = 8;
 
 const read = (key, fallback) => {
@@ -38,8 +42,13 @@ export function siteKey(url) {
     }
 }
 
+/** A search box, independent of what was searched: "https://www.google.com/search?q". */
+export function searchKey(origin, path, param) {
+    return `${origin.replace('://www.', '://')}${path}?${param}`;
+}
+
 // Firefox's frecency buckets: a visit counts for less the older it is.
-const weight = (time) => {
+export const weight = (time) => {
     const age = Date.now() - time;
     if (age < 4 * DAY) return 100;
     if (age < 14 * DAY) return 70;
@@ -48,13 +57,51 @@ const weight = (time) => {
     return 10;
 };
 
-// Not destinations: sign-in hops, mail link scanners, CDNs, search result pages, this page.
+// Not destinations: sign-in hops, mail link scanners, CDNs, search engines' result pages, this page.
 const NOT_A_DESTINATION = [
     /^(auth|login|signin|sso|accounts?)\./, /\.signin\.aws$/, /^login\.microsoftonline\.com$/,
     /safelinks|securelinks|atpscan|urldefense|linkprotect/, /(^|\.)static\.|onecdn|cdn\./,
     /^(google\.[a-z.]+|bing\.com|duckduckgo\.com|yandex\.[a-z]+|search\.brave\.com)$/,
     /(^|\.)github\.io$/,
 ];
+const isDestination = (key) => !NOT_A_DESTINATION.some((pattern) => pattern.test(key.split(':')[0]));
+
+// ---- names ----
+
+// Sites whose page titles don't name them.
+const SITE_NAMES = [
+    [/console\.aws\.amazon\.com$/, 'AWS Console'],
+    [/(^|\.)aws\.amazon\.com$|awsapps\.com$/, 'AWS'],
+    [/sapbydesign\.com$/, 'SAP ByDesign'],
+    [/(^|\.)sharepoint\.com$/, 'SharePoint'],
+    [/^mail\.google\.com$/, 'Gmail'],
+];
+
+/** The name a site goes by when its titles don't say it, if we know one. */
+export const knownSiteName = (host) => SITE_NAMES.find(([pattern]) => pattern.test(host))?.[1];
+
+const titleParts = (title) => (title ?? '').split(/\s+[-|·—–]\s+/).map((s) => s.trim()).filter(Boolean);
+const readsLikeAName = (part) => part.length <= 22 && !/\d/.test(part);
+
+/** A short name for a site: the site part of its page title ("Mail - Nikita - Outlook" → "Outlook"), else its host. */
+export function siteName(title, key) {
+    const host = key.split(':')[0];
+    const known = knownSiteName(host);
+    if (known) return known;
+    const part = titleParts(title).filter(readsLikeAName).at(-1);
+    if (part) return part;
+    if (/^(localhost|[\d.]+)$/.test(host)) return key;
+    const label = host.split('.').at(-2) ?? host;
+    return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** A page's own name and the site it belongs to: "LOG board - Kanban Board - Jira" → ["LOG board", "Jira"]. */
+function pageName(title, url) {
+    const parts = titleParts(title);
+    const site = siteName(title, siteKey(url));
+    const own = parts.find((part) => part !== site) ?? parts[0] ?? siteKey(url);
+    return [own.length > 32 ? `${own.slice(0, 30)}…` : own, site];
+}
 
 // ---- recording ----
 
@@ -77,20 +124,29 @@ export function recordVisit(url, title = '') {
     write(VISITS, visits);
 }
 
+/** Note a search made from this page, by its search box (see searchKey). */
+export function recordSearch(key) {
+    const searches = read(SEARCHES, {});
+    searches[key] = [...(searches[key] ?? []), Date.now()].slice(-50);
+    write(SEARCHES, searches);
+}
+
 export function hideSuggestion(key) {
     write(HIDDEN, [...new Set([...read(HIDDEN, []), key])]);
 }
 
 export function forget({ hiddenOnly = false } = {}) {
-    for (const key of hiddenOnly ? [HIDDEN] : [VISITS, BROWSING, HIDDEN, HEALTH]) storage.set(key, 'null');
+    for (const key of hiddenOnly ? [HIDDEN] : [VISITS, SEARCHES, BROWSING, HIDDEN, HEALTH]) storage.set(key, 'null');
 }
 
-// ---- the model the directory renders from ----
+// ---- the model the page renders from ----
 
-/** Per-site { url, title, score, last } from the browser history when we have it, else from this page. */
+const browsing = () => read(BROWSING, null);
+
+/** Per-site { url, title, score, last }: from the browser history when there is one, else from this page. */
 function sites() {
-    const browsing = read(BROWSING, null);
-    if (browsing?.sites) return browsing.sites;
+    const data = browsing();
+    if (data?.sites) return data.sites;
 
     const result = {};
     for (const [key, entry] of Object.entries(read(VISITS, {}))) {
@@ -104,49 +160,72 @@ function sites() {
     return result;
 }
 
-// Sites whose page titles don't name them.
-const SITE_NAMES = [
-    [/console\.aws\.amazon\.com$/, 'AWS Console'],
-    [/(^|\.)aws\.amazon\.com$|awsapps\.com$/, 'AWS'],
-    [/sapbydesign\.com$/, 'SAP ByDesign'],
-    [/(^|\.)sharepoint\.com$/, 'SharePoint'],
-];
+/** Every known site as a search candidate: { key, name, url, score }. */
+export function knownSites() {
+    return Object.entries(sites())
+        .filter(([key]) => isDestination(key))
+        .map(([key, site]) => ({ key, name: siteName(site.title, key), url: site.url, score: site.score }));
+}
 
-/** A short name for a site: the site part of its page title ("Mail - Nikita - Outlook" → "Outlook"), else its host. */
-function siteName(title, key) {
-    const host = key.split(':')[0];
-    const known = SITE_NAMES.find(([pattern]) => pattern.test(host));
-    if (known) return known[1];
-    // The last part of a title that reads like a name, not an ID ("eu-central-1", "#4521").
-    const part = (title ?? '').split(/\s+[-|·—–]\s+/).map((s) => s.trim())
-        .filter((s) => s && s.length <= 22 && !/\d/.test(s)).at(-1);
-    if (part) return part;
-    if (/^(localhost|[\d.]+)$/.test(host)) return key;
-    const label = host.split('.').at(-2) ?? host;
-    return label.charAt(0).toUpperCase() + label.slice(1);
+/** The pages kept from the last history summary, to search while the extension is busy or absent. */
+export const knownPages = () => browsing()?.pages ?? [];
+
+/**
+ * Use of each search box, { [searchKey]: { origin, path, param, score } }: the browser history's when
+ * there is one (it already contains the searches made here), else the page's own.
+ */
+export function searchScores() {
+    const result = {};
+    const data = browsing();
+    if (data?.searches) {
+        for (const entry of data.searches) {
+            const key = searchKey(entry.origin, entry.path, entry.param);
+            const score = entry.count * weight(entry.last);
+            if (!result[key] || result[key].score < score) result[key] = { ...entry, score };
+        }
+        return result;
+    }
+    for (const [key, times] of Object.entries(read(SEARCHES, {}))) {
+        const [, origin, path, param] = key.match(/^(https?:\/\/[^/]+)(\/[^?]*)\?(.+)$/) ?? [];
+        if (origin) result[key] = { origin, path, param, score: times.reduce((sum, time) => sum + weight(time), 0) };
+    }
+    return result;
 }
 
 /**
  * @param {Set<string>} known  site keys already on the page
- * @returns {{ frequent: {key, name, url}[], quiet: Set<string>, gone: Set<string>,
- *             source: 'browser' | 'page', at: number, total: number, hidden: number }}
+ * @param {Set<string>} knownUrls  addresses already on the page
  */
-export function model(known) {
+export function model(known, knownUrls = new Set()) {
     const all = sites();
     const hidden = new Set(read(HIDDEN, []));
-    const browsing = read(BROWSING, null);
-
+    const data = browsing();
     const here = siteKey(location.href);
-    const frequent = Object.entries(all)
-        .filter(([key, site]) => key !== here && !known.has(key) && !hidden.has(key) && site.score >= 150
-            && !NOT_A_DESTINATION.some((pattern) => pattern.test(key.split(':')[0])))
+    const fresh = (key) => key !== here && !known.has(key) && !hidden.has(key) && isDestination(key);
+
+    // The sites used most that aren't listed, then the pages people keep returning to on listed ones.
+    const frequentSites = Object.entries(all)
+        .filter(([key, site]) => fresh(key) && site.score >= 150)
         .sort((a, b) => b[1].score - a[1].score)
-        .slice(0, FREQUENT_COUNT)
+        .slice(0, FREQUENT_SITES)
         .map(([key, site]) => ({ key, name: siteName(site.title, key), url: site.url }));
+
+    const frequentPages = (data?.pages ?? [])
+        .filter((page) => {
+            const key = siteKey(page.url);
+            return !hidden.has(page.url) && !knownUrls.has(page.url) && key !== here && isDestination(key)
+                && page.visits >= 8 && Date.now() - page.last < 30 * DAY;
+        })
+        .sort((a, b) => b.visits * weight(b.last) - a.visits * weight(a.last))
+        .slice(0, FREQUENT_COUNT - frequentSites.length)
+        .map((page) => {
+            const [name, site] = pageName(page.title, page.url);
+            return { key: page.url, name, note: site, url: page.url };
+        });
 
     // Only the browser history can say a link went unused; this page sees just its own clicks.
     const quiet = new Set();
-    if (browsing?.sites && browsing.total >= 500) {
+    if (data?.sites && data.total >= 500) {
         for (const key of known) {
             const site = all[key];
             if (!site || Date.now() - site.last > QUIET_AFTER) quiet.add(key);
@@ -157,36 +236,26 @@ export function model(known) {
     const gone = new Set(Object.keys(health).filter((host) => health[host].misses >= 2));
 
     return {
-        frequent, quiet, gone,
-        source: browsing?.sites ? 'browser' : 'page', at: browsing?.at ?? 0, total: browsing?.total ?? 0, hidden: hidden.size,
+        frequent: [...frequentSites, ...frequentPages],
+        quiet,
+        gone,
+        source: data?.sites ? 'browser' : 'page',
+        at: data?.at ?? 0,
+        total: data?.total ?? 0,
+        hidden: hidden.size,
     };
 }
 
 // ---- the browser history, through the extension ----
 
-/** Ask the Mandy Start extension for a summary of the browser history; null when it isn't installed. */
-function askExtension() {
-    return new Promise((resolve) => {
-        const done = (value) => {
-            window.removeEventListener('message', onMessage);
-            clearTimeout(timer);
-            resolve(value);
-        };
-        const onMessage = (event) => {
-            if (event.origin === location.origin && event.data?.source === 'mandy-start-extension' && event.data.type === 'browsing') {
-                done(event.data.data);
-            }
-        };
-        const timer = setTimeout(() => done(null), 2000);
-        window.addEventListener('message', onMessage);
-        window.postMessage({ source: 'mandy-start-page', type: 'browsing' }, location.origin);
-    });
-}
-
 async function refreshBrowsing() {
-    const cached = read(BROWSING, null);
-    if (cached && Date.now() - cached.at < BROWSING_TTL) return false;
-    const data = await askExtension();
+    const cached = browsing();
+    if (cached && Date.now() - cached.at < BROWSING_TTL && cached.pages) {
+        noteAnswer(cached);
+        return false;
+    }
+    const data = await ask('browsing');
+    noteAnswer(data ?? cached);
     if (!data?.sites) return false;
 
     // Score each site the way the page scores its own visits, and keep the 400 strongest.
@@ -194,7 +263,13 @@ async function refreshBrowsing() {
         .map(([key, site]) => [key, { url: site.url, title: site.title, score: site.visits * weight(site.last), last: site.last }])
         .sort((a, b) => b[1].score - a[1].score)
         .slice(0, 400);
-    write(BROWSING, { at: Date.now(), total: data.total, sites: Object.fromEntries(scored) });
+    write(BROWSING, {
+        at: Date.now(),
+        total: data.total,
+        sites: Object.fromEntries(scored),
+        pages: data.pages ?? null,
+        searches: data.searches ?? null,
+    });
     return true;
 }
 
@@ -205,7 +280,7 @@ const PRIVATE_HOST = /^(localhost|[\d.]+|\[.*\])$|\.(local|lan|internal|home|arp
 async function checkHealth(urls) {
     const health = read(HEALTH, {});
     const hosts = [...new Set(urls.map(hostOf))].filter((host) => host && !PRIVATE_HOST.test(host));
-    // A week between checks; a day when the last one missed, to confirm quickly.
+    // A week between checks; a day when the last one missed, to confirm quickly. Misses go first.
     const due = hosts.filter((host) => {
         const last = health[host];
         return !last || Date.now() - last.checked > (last.misses ? DAY : 7 * DAY);

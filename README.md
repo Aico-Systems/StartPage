@@ -21,7 +21,8 @@ node tools/marks.mjs path/to/node_modules/simple-icons   # e.g. ../Aicoyo/landin
 
 Each person's page reshapes itself around what they use:
 
-- **Frequent** lists the sites they use most that aren't on the page.
+- **Frequent** lists the sites they use most that aren't on the page, and pages they keep returning to.
+- **Search engines** reorder by use, and searches on other sites become bangs.
 - **Rarely opened** folds away links they haven't opened in 45 days.
 - Links whose address no longer exists in DNS disappear (checked weekly over DNS-over-HTTPS).
 
@@ -29,8 +30,9 @@ It learns from what's opened through the page, and with the [Mandy Start extensi
 
 ## Using it
 
-- Just start typing. Matching links stay lit; <kbd>Tab</kbd> picks one, <kbd>Enter</kbd> opens it.
-- `!gh query`, `!yt query`, `!c question` search one engine; the bangs are listed in Settings.
+- Just start typing. Results list your links, the sites you use, your open tabs and pages from your history (the last two with the extension), matched loosely: `tci` finds Travis CI, `conf` Confluence. A clear hit is what <kbd>Enter</kbd> opens; otherwise <kbd>Enter</kbd> searches. <kbd>Tab</kbd> / <kbd>↓</kbd> move through the list.
+- `!gh query`, `!yt query`, `!c question` search one engine; a bang can be shortened to the start of the engine's name (`!wiki`). Sites you search often get bangs of their own (`!confluence pool car`), listed in Settings.
+- Engines order themselves by use: the one you use most leads, and ones you use often join the row.
 - `localhost:5173`, `10.42.0.1:8080`, `docs.aicoflow.com/api` open directly.
 - <kbd>1</kbd>–<kbd>9</kbd> switch engine, <kbd>Ctrl</kbd>+<kbd>Enter</kbd> opens in a new tab, <kbd>/</kbd> focuses the box.
 - Click the time to switch between 24- and 12-hour.
@@ -47,9 +49,11 @@ js/main.js         entry
 js/team.js         the shared links
 js/store.js        per-browser settings and personal links, backup
 js/directory.js    the link directory, filtering, logos
-js/learn.js        frequent sites, rarely opened links, dead addresses
+js/learn.js        frequent sites and pages, rarely opened links, dead addresses, search use
+js/match.js        fuzzy matching for the search box
+js/bridge.js       messages to and from the extension
 js/now.js          greeting, clock, date, weather
-js/search.js       engines, bangs, addresses, keyboard
+js/search.js       the launcher: results, engines, bangs, addresses, keyboard
 js/settings.js     settings sheet
 js/marks.js        generated brand logos
 js/util.js         small DOM helpers

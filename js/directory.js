@@ -1,22 +1,23 @@
 // The link directory: what each person uses most and isn't listed yet, the team's sections, their own,
-// and at the end what they rarely open. Typing in the search box filters it.
+// and at the end what they rarely open. Typing in the search box dims what doesn't match.
 
 import { hideSuggestion, model, recordVisit, siteKey, startLearning } from './learn.js';
 import { MARK_HOSTS, MARKS } from './marks.js';
-import { hostOf, on, settings } from './store.js';
+import { score } from './match.js';
+import { emit, hostOf, on, settings } from './store.js';
 import { TEAM } from './team.js';
-import { $, $$, esc, perFrame, safeUrl } from './util.js';
+import { $, esc, perFrame, safeUrl } from './util.js';
 
 const OWN_HOSTS = /(^|\.)(aicoflow\.com|insight-proglove\.com)$/;
+const MATCH_THRESHOLD = 55;
 
 let root;
-let links = [];
-let matches = [];
-let selected = -1;
-let query = '';
+let entries = []; // { name, note, url, mark, el } for every link on the page
 let quietOpen = false;
+let query = '';
 
-function markFor(host) {
+/** The logo the marks table has for a host, if any. */
+export function markFor(host) {
     const hit = MARK_HOSTS.find(([pattern]) =>
         pattern.endsWith('.') ? host.startsWith(pattern) : host === pattern || host.endsWith(`.${pattern}`));
     return hit && MARKS[hit[1]];
@@ -36,25 +37,18 @@ export function markHtml(url, name, slug) {
     return `<span class="mark initial">${esc(initial)}</span>`;
 }
 
-function linkHtml(link, { dismissable = false } = {}) {
+function linkHtml(link, index, { dismissable = false } = {}) {
     const target = settings.linkBehavior === 'same' ? '' : ' target="_blank" rel="noopener noreferrer"';
-    const key = `${link.name} ${link.note ?? ''} ${hostOf(link.url)}`.toLowerCase();
     const dismiss = dismissable
-        ? `<button type="button" class="dismiss" data-site="${esc(siteKey(link.url))}" aria-label="Don’t suggest ${esc(link.name)}" title="Don’t suggest this">×</button>`
+        ? `<button type="button" class="dismiss" data-key="${esc(link.key)}" aria-label="Don’t suggest ${esc(link.name)}" title="Don’t suggest this">×</button>`
         : '';
     return `
-        <li><a class="link" href="${esc(safeUrl(link.url))}"${target} data-key="${esc(key)}">
+        <li><a class="link" href="${esc(safeUrl(link.url))}"${target} data-entry="${index}">
             ${markHtml(link.url, link.name, link.mark)}
             <span class="name">${esc(link.name)}</span>
             ${link.note ? `<span class="note">${esc(link.note)}</span>` : ''}
         </a>${dismiss}</li>`;
 }
-
-const groupHtml = (heading, items, i, { className = '', dismissable = false } = {}) => `
-    <section class="group ${className}" style="--i: ${i}">
-        <h2>${heading}</h2>
-        <ul>${items.map((link) => linkHtml(link, { dismissable })).join('')}</ul>
-    </section>`;
 
 // The same name on the same site is the same link, whichever subdomain it uses.
 const baseDomain = (url) => hostOf(url).split('.').slice(-2).join('.');
@@ -72,8 +66,8 @@ function render() {
         })),
     ].map((section) => ({ ...section, links: section.links.filter(complete) }));
 
-    const known = new Set(sections.flatMap((section) => section.links.map((link) => siteKey(link.url))));
-    const { frequent, quiet, gone } = model(known);
+    const listed = sections.flatMap((section) => section.links);
+    const { frequent, quiet, gone } = model(new Set(listed.map((link) => siteKey(link.url))), new Set(listed.map((link) => link.url)));
 
     // Links whose address is gone leave the page; links this person never opens fold away at the end.
     const quietLinks = [];
@@ -87,48 +81,44 @@ function render() {
         }),
     })).filter((section) => section.links.length);
 
-    let i = 0;
-    root.innerHTML = [
-        frequent.length ? groupHtml('Frequent', frequent, i++, { className: 'frequent', dismissable: true }) : '',
-        ...shown.map((section) => groupHtml(esc(section.name), section.links, i++)),
-        quietLinks.length
-            ? groupHtml(`<button type="button" class="fold" aria-expanded="${quietOpen}">Rarely opened <span>${quietLinks.length}</span></button>`,
-                quietLinks, i++, { className: `quiet${quietOpen ? ' open' : ''}` })
-            : '',
-    ].join('');
+    const groups = [
+        frequent.length && { heading: 'Frequent', links: frequent, className: 'frequent', dismissable: true },
+        ...shown.map((section) => ({ heading: esc(section.name), links: section.links })),
+        quietLinks.length && {
+            heading: `<button type="button" class="fold" aria-expanded="${quietOpen}">Rarely opened <span>${quietLinks.length}</span></button>`,
+            links: quietLinks,
+            className: `quiet${quietOpen ? ' open' : ''}`,
+        },
+    ].filter(Boolean);
 
-    links = $$('.link', root);
+    entries = groups.flatMap((group) => group.links);
+    let index = 0;
+    root.innerHTML = groups.map((group, i) => `
+        <section class="group ${group.className ?? ''}" style="--i: ${i}">
+            <h2>${group.heading}</h2>
+            <ul>${group.links.map((link) => linkHtml(link, index++, group)).join('')}</ul>
+        </section>`).join('');
+    for (const el of root.querySelectorAll('.link')) entries[el.dataset.entry].el = el;
     filterLinks(query);
 }
 
-/** Dim links whose name, note or domain doesn't contain `text`. Returns the number of matches. */
+/** How well `text` matches a link: its name, note and address. */
+export const linkScore = (text, link) => score(text, [[link.name, 1], [link.note, 0.6], [hostOf(link.url), 0.8]]);
+
+/** Every link on the page, for the search box to rank. */
+export const linkEntries = () => entries;
+
+/** Dim the links that don't match `text`. */
 export function filterLinks(text) {
-    select(-1);
-    query = text.trim().toLowerCase();
+    query = text.trim();
     root.classList.toggle('filtering', query !== '');
-    matches = links.filter((link) => {
-        const hit = query !== '' && link.dataset.key.includes(query);
-        link.classList.toggle('match', hit);
-        return hit;
-    });
-    return matches.length;
+    for (const entry of entries) entry.el?.classList.toggle('match', query !== '' && linkScore(query, entry) >= MATCH_THRESHOLD);
 }
 
-function select(index) {
-    matches[selected]?.classList.remove('selected');
-    selected = index;
-    matches[selected]?.classList.add('selected');
+/** Mark the link the search box would open, so it can be seen in place too. */
+export function highlight(url) {
+    for (const entry of entries) entry.el?.classList.toggle('selected', entry.url === url);
 }
-
-/** Step through the matches (wrapping). Returns false when nothing matches. */
-export function moveSelection(step) {
-    if (!matches.length) return false;
-    const from = selected === -1 && step < 0 ? 0 : selected;
-    select((from + step + matches.length) % matches.length);
-    return true;
-}
-
-export const selectedLink = () => matches[selected] ?? null;
 
 /** Open a URL the way links open; `newTab` forces a new tab. The visit is remembered either way. */
 export function openUrl(url, { newTab = false, title = '' } = {}) {
@@ -158,7 +148,7 @@ export function initDirectory() {
 
     root.addEventListener('click', (e) => {
         if (e.target.closest('.dismiss')) {
-            hideSuggestion(e.target.closest('.dismiss').dataset.site);
+            hideSuggestion(e.target.closest('.dismiss').dataset.key);
             render();
         } else if (e.target.closest('.fold')) {
             quietOpen = !quietOpen;
@@ -169,5 +159,6 @@ export function initDirectory() {
     const rerender = perFrame(render);
     on(['personal', 'linkBehavior', 'learning'], rerender);
     const allUrls = () => [...TEAM, ...settings.personal].flatMap((section) => section.links.map((link) => link.url));
-    startLearning(allUrls, rerender);
+    startLearning(allUrls, () => emit('learned'));
+    on('learned', rerender);
 }
